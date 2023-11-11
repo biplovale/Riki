@@ -161,7 +161,7 @@ class Processor(object):
 
         return self.final, self.markdown, self.meta
 
-
+# in this class commented code is original code provided
 class Page(object):
     '''def __init__(self, path, url, new=False):
         self.path = path
@@ -287,6 +287,7 @@ class Page(object):
         self._meta['tags'] = value
 
 
+# in this class commented code is original code provided
 class Wiki(object):
     def __init__(self, root):
         # self.root = root

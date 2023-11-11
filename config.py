@@ -8,4 +8,5 @@ CONTENT_DIR = '/Users/gavinsingh/Documents/Riki/content'
 USER_DIR = '/Users/gavinsingh/Documents/Riki/user'
 NUMBER_OF_HISTORY = 5
 PRIVATE = True
+# connection string to connect to mongoDB
 connection_string = "mongodb+srv://sgavin0813:password_1234@atlascluster.qdshz9s.mongodb.net/"
