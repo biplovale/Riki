@@ -41,6 +41,11 @@ def index():
     pages = current_wiki.index()
     return render_template('index.html', pages=pages)
 
+# profile page display
+@bp.route('/profile', methods=['GET', 'POST'])
+@protect
+def profile():
+    return render_template('profile.html')
 
 @bp.route('/<path:url>/')
 @protect

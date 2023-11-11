@@ -2,14 +2,13 @@
     Wiki core
     ~~~~~~~~~
 """
-from collections import OrderedDict
-from io import open
 import os
 import re
-
-from flask import abort
-from flask import url_for
+from collections import OrderedDict
 import markdown
+from flask import abort, session
+from flask import url_for
+from wiki import DataAccessObject
 
 
 def clean_url(url):
@@ -115,30 +114,29 @@ class Processor(object):
         """
         self.html = self.md.convert(self.pre)
 
-
     def split_raw(self):
         """
             Split text into raw meta and content.
         """
         self.meta_raw, self.markdown = self.pre.split('\n\n', 1)
 
-    def process_meta(self):
-        """
-            Get metadata.
+    def split_raw(self):
+        split_result = self.pre.split('\n\n', 1)
+        if len(split_result) == 2:
+            self.meta_raw, self.markdown = split_result
+        else:
+            self.meta_raw = split_result[0]
+            self.markdown = ""  # or some default value
 
-            .. warning:: Can only be called after :meth:`html` was
-                called.
-        """
-        # the markdown meta plugin does not retain the order of the
-        # entries, so we have to loop over the meta values a second
-        # time to put them into a dictionary in the correct order
+    def process_meta(self):
         self.meta = OrderedDict()
         for line in self.meta_raw.split('\n'):
-            key = line.split(':', 1)[0]
-            # markdown metadata always returns a list of lines, we will
-            # reverse that here
-            self.meta[key.lower()] = \
-                '\n'.join(self.md.Meta[key.lower()])
+            key = line.split(':', 1)[0].lower()
+            if key in self.md.Meta:
+                self.meta[key] = '\n'.join(self.md.Meta[key])
+            else:
+                # Handle the missing key, perhaps log a warning or set a default value
+                print(f"Warning: Metadata key '{key}' not found.")
 
     def process_post(self):
         """
@@ -165,9 +163,20 @@ class Processor(object):
 
 
 class Page(object):
-    def __init__(self, path, url, new=False):
+    '''def __init__(self, path, url, new=False):
         self.path = path
         self.url = url
+        self._meta = OrderedDict()
+        if not new:
+            self.load()
+            self.render() '''
+
+    def __init__(self, db, url, new=False):
+        # MongoDB setup
+        # instead of path(where page is stored we have database)
+        self.db = DataAccessObject.db  # same as one in DataAccess class
+        self.url = url
+        self.collection = self.db.pages  # 'pages' is the MongoDB collection name
         self._meta = OrderedDict()
         if not new:
             self.load()
@@ -176,15 +185,28 @@ class Page(object):
     def __repr__(self):
         return "<Page: {}@{}>".format(self.url, self.path)
 
-    def load(self):
+    '''def load(self):
         with open(self.path, 'r', encoding='utf-8') as f:
-            self.content = f.read()
+            self.content = f.read()'''
 
+    def load(self):
+        # Fetch page from MongoDB
+        # collection name is page, initialized in constructor
+        # url is like primary key. It is part of the collections schema
+        page_data = self.collection.find_one({"url": self.url})
+        if page_data:
+            self.content = page_data.get("content", "")
+            self._meta = page_data.get("meta", {})
+        else:
+            self.content = ""
+            self._meta = OrderedDict()
+
+    # won't change as it is just processing pages
     def render(self):
         processor = Processor(self.content)
         self._html, self.body, self._meta = processor.process()
 
-    def save(self, update=True):
+    '''def save(self, update=True):
         folder = os.path.dirname(self.path)
         if not os.path.exists(folder):
             os.makedirs(folder)
@@ -196,14 +218,35 @@ class Page(object):
             f.write(self.body.replace('\r\n', '\n'))
         if update:
             self.load()
+            self.render()'''
+
+    def save(self, update=True):
+        # Prepare data for MongoDB storage
+        page_data = {
+            "url": self.url,
+            "content": self.body,
+            "meta": dict(self._meta),
+            # session.get('unique_id') is basically authors name
+            "author": session.get('unique_id') or ""
+        }
+        # Save or update page in MongoDB
+        self.collection.update_one({"url": self.url}, {"$set": page_data}, upsert=True)
+        if update:
+            self.load()
             self.render()
 
     @property
     def meta(self):
         return self._meta
 
-    def __getitem__(self, name):
+    '''def __getitem__(self, name):
         return self._meta[name]
+
+    def __setitem__(self, name, value):
+        self._meta[name] = value '''
+
+    def __getitem__(self, name):
+        return self._meta.get(name, None)
 
     def __setitem__(self, name, value):
         self._meta[name] = value
@@ -217,44 +260,61 @@ class Page(object):
 
     @property
     def title(self):
+        '''
         try:
             return self['title']
         except KeyError:
             return self.url
+            '''
+        # self.url is default value to return
+        return self._meta.get('title', self.url)
 
     @title.setter
     def title(self, value):
-        self['title'] = value
+        # self['title'] = value
+        self._meta['title'] = value
 
     @property
     def tags(self):
-        try:
+        ''' try:
             return self['tags']
         except KeyError:
-            return ""
+            return "" '''
+        return self._meta.get('tags', '')
 
     @tags.setter
     def tags(self, value):
-        self['tags'] = value
+        self._meta['tags'] = value
 
 
 class Wiki(object):
     def __init__(self, root):
-        self.root = root
+        # self.root = root
+        self.db = DataAccessObject.db  # database object
+        self.collection = self.db.pages  # Use your MongoDB collection name
 
-    def path(self, url):
-        return os.path.join(self.root, url + '.md')
+    # DONT NEED IT NOW
+    '''def path(self, url):
+        return os.path.join(self.root, url + '.md')'''
 
     def exists(self, url):
-        path = self.path(url)
-        return os.path.exists(path)
+        ''' path = self.path(url)
+        return os.path.exists(path) '''
+        return self.collection.count_documents({"url": url}) > 0
 
     def get(self, url):
-        path = self.path(url)
+        '''path = self.path(url)
         #path = os.path.join(self.root, url + '.md')
         if self.exists(url):
             return Page(path, url)
+        return None'''
+        if self.exists(url):
+            return Page(self.db, url)
         return None
+
+    # to get all the pages by author
+    def get_all(self):
+        pass
 
     def get_or_404(self, url):
         page = self.get(url)
@@ -263,12 +323,16 @@ class Wiki(object):
         abort(404)
 
     def get_bare(self, url):
-        path = self.path(url)
+        '''path = self.path(url)
         if self.exists(url):
             return False
         return Page(path, url, new=True)
+        '''
+        if not self.exists(url):
+            return Page(self.db, url, new=True)
+        return False
 
-    def move(self, url, newurl):
+    '''def move(self, url, newurl):
         source = os.path.join(self.root, url) + '.md'
         target = os.path.join(self.root, newurl) + '.md'
         # normalize root path (just in case somebody defined it absolute,
@@ -287,16 +351,23 @@ class Wiki(object):
         folder = os.path.dirname(target)
         if not os.path.exists(folder):
             os.makedirs(folder)
-        os.rename(source, target)
+        os.rename(source, target)'''
+
+    def move(self, old_url, new_url):
+        if self.exists(new_url):
+            raise RuntimeError('Target URL already exists: %s' % new_url)
+        self.collection.update_one({"url": old_url}, {"$set": {"url": new_url}})
 
     def delete(self, url):
-        path = self.path(url)
+        '''path = self.path(url)
         if not self.exists(url):
             return False
         os.remove(path)
-        return True
+        return True'''
+        result = self.collection.delete_one({"url": url})
+        return result.deleted_count > 0
 
-    def index(self):
+    '''def index(self): 
         """
             Builds up a list of all the available pages.
 
@@ -316,9 +387,9 @@ class Wiki(object):
                     url = clean_url(os.path.join(cur_dir_url, cur_file[:-3]))
                     page = Page(path, url)
                     pages.append(page)
-        return sorted(pages, key=lambda x: x.title.lower())
+        return sorted(pages, key=lambda x: x.title.lower()) '''
 
-    def index_by(self, key):
+    '''def index_by(self, key):
         """
             Get an index based on the given key.
 
@@ -337,12 +408,27 @@ class Wiki(object):
             pre = pages.get(value, [])
             pages[value] = pre.append(page)
         return pages
+        '''
+
+    def index(self):
+        cursor = self.collection.find({})
+        return [Page(self.db, doc['url']) for doc in cursor]
+
+    def index_by(self, key):
+        pages = {}
+        for page in self.index():
+            value = getattr(page, key, None)
+            if value:
+                pages.setdefault(value, []).append(page)
+        return pages
 
     def get_by_title(self, title):
-        pages = self.index(attr='title')
-        return pages.get(title)
+        ''' pages = self.index(attr='title')
+        return pages.get(title) '''
+        # META IS WHERE EVERYTHING IS STORED INSIDE OUR COLLECTION (EXCEPT URL)
+        return self.collection.find_one({"meta.title": title})
 
-    def get_tags(self):
+    '''def get_tags(self):
         pages = self.index()
         tags = {}
         for page in pages:
@@ -355,17 +441,32 @@ class Wiki(object):
                     tags[tag].append(page)
                 else:
                     tags[tag] = [page]
-        return tags
+        return tags '''
 
-    def index_by_tag(self, tag):
+    ''' def index_by_tag(self, tag):
         pages = self.index()
         tagged = []
         for page in pages:
             if tag in page.tags:
                 tagged.append(page)
-        return sorted(tagged, key=lambda x: x.title.lower())
+        return sorted(tagged, key=lambda x: x.title.lower()) '''
 
-    def search(self, term, ignore_case=True, attrs=['title', 'tags', 'body']):
+    def get_tags(self):
+        cursor = self.collection.find({})
+        tags = {}
+        for doc in cursor:
+            pagetags = doc.get("meta", {}).get("tags", "").split(',')
+            for tag in pagetags:
+                tag = tag.strip()
+                if tag:
+                    tags.setdefault(tag, []).append(Page(self.db, doc['url']))
+        return tags
+
+    def index_by_tag(self, tag):
+        cursor = self.collection.find({"meta.tags": {"$regex": tag, "$options": "i"}})
+        return [Page(self.db, doc['url']) for doc in cursor]
+
+    ''' def search(self, term, ignore_case=True, attrs=['title', 'tags', 'body']):
         pages = self.index()
         regex = re.compile(term, re.IGNORECASE if ignore_case else 0)
         matched = []
@@ -374,4 +475,21 @@ class Wiki(object):
                 if regex.search(getattr(page, attr)):
                     matched.append(page)
                     break
+        return matched '''
+
+    def search(self, term, ignore_case=True, attrs=['title', 'tags', 'body']):
+        regex = re.compile(term, re.IGNORECASE if ignore_case else 0)
+        matched = []
+
+        for attr in attrs:
+            query = {"$regex": regex.pattern, "$options": "i"} if ignore_case else regex.pattern
+            # cursor IS an iterable
+            # THERE ARE sub document 'title', 'tags', 'body IN meta
+            cursor = self.collection.find({f"meta.{attr}": query})
+
+            for doc in cursor:
+                page = Page(self.db, doc['url'])
+                if page not in matched:
+                    matched.append(page)
+
         return matched
