@@ -170,6 +170,7 @@ class Page(object):
         self.url = url
         self.collection = self.db.pages  # 'pages' is the MongoDB collection name
         self._meta = OrderedDict()
+        self.new = new
         if not new:
             self.load()
             self.render()
