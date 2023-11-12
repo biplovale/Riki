@@ -15,7 +15,7 @@ class WikiError(Exception):
 def get_wiki():
     wiki = getattr(g, '_wiki', None)
     if wiki is None:
-        wiki = g._wiki = Wiki(current_app.config['CONTENT_DIR'])
+        wiki = g._wiki = Wiki()
     return wiki
 
 current_wiki = LocalProxy(get_wiki)

@@ -2,7 +2,6 @@
     Wiki core
     ~~~~~~~~~
 """
-import os
 import re
 from collections import OrderedDict
 import markdown
@@ -163,13 +162,6 @@ class Processor(object):
 
 # in this class commented code is original code provided
 class Page(object):
-    '''def __init__(self, path, url, new=False):
-        self.path = path
-        self.url = url
-        self._meta = OrderedDict()
-        if not new:
-            self.load()
-            self.render() '''
 
     def __init__(self, db, url, new=False):
         # MongoDB setup
@@ -185,9 +177,6 @@ class Page(object):
     def __repr__(self):
         return "<Page: {}@{}>".format(self.url, self.path)
 
-    '''def load(self):
-        with open(self.path, 'r', encoding='utf-8') as f:
-            self.content = f.read()'''
 
     def load(self):
         # Fetch page from MongoDB
@@ -206,19 +195,6 @@ class Page(object):
         processor = Processor(self.content)
         self._html, self.body, self._meta = processor.process()
 
-    '''def save(self, update=True):
-        folder = os.path.dirname(self.path)
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-        with open(self.path, 'w', encoding='utf-8') as f:
-            for key, value in list(self._meta.items()):
-                line = '%s: %s\n' % (key, value)
-                f.write(line)
-            f.write('\n')
-            f.write(self.body.replace('\r\n', '\n'))
-        if update:
-            self.load()
-            self.render()'''
 
     def save(self, update=True):
         # Prepare data for MongoDB storage
@@ -239,12 +215,6 @@ class Page(object):
     def meta(self):
         return self._meta
 
-    '''def __getitem__(self, name):
-        return self._meta[name]
-
-    def __setitem__(self, name, value):
-        self._meta[name] = value '''
-
     def __getitem__(self, name):
         return self._meta.get(name, None)
 
@@ -260,12 +230,6 @@ class Page(object):
 
     @property
     def title(self):
-        '''
-        try:
-            return self['title']
-        except KeyError:
-            return self.url
-            '''
         # self.url is default value to return
         return self._meta.get('title', self.url)
 
@@ -276,10 +240,6 @@ class Page(object):
 
     @property
     def tags(self):
-        ''' try:
-            return self['tags']
-        except KeyError:
-            return "" '''
         return self._meta.get('tags', '')
 
     @tags.setter
@@ -289,28 +249,16 @@ class Page(object):
 
 # in this class commented code is original code provided
 class Wiki(object):
-    def __init__(self, root):
-        # self.root = root
-        self.db = DataAccessObject.db  # database object
-        self.collection = self.db.pages  # Use your MongoDB collection name
+    def __init__(self):
+        self.collection = DataAccessObject.db.pages  # Use your MongoDB collection name
 
-    # DONT NEED IT NOW
-    '''def path(self, url):
-        return os.path.join(self.root, url + '.md')'''
 
     def exists(self, url):
-        ''' path = self.path(url)
-        return os.path.exists(path) '''
         return self.collection.count_documents({"url": url}) > 0
 
     def get(self, url):
-        '''path = self.path(url)
-        #path = os.path.join(self.root, url + '.md')
         if self.exists(url):
-            return Page(path, url)
-        return None'''
-        if self.exists(url):
-            return Page(self.db, url)
+            return Page(DataAccessObject.db, url)
         return None
 
     # to get all the pages by author
@@ -324,35 +272,10 @@ class Wiki(object):
         abort(404)
 
     def get_bare(self, url):
-        '''path = self.path(url)
-        if self.exists(url):
-            return False
-        return Page(path, url, new=True)
-        '''
         if not self.exists(url):
-            return Page(self.db, url, new=True)
+            return Page(DataAccessObject.db, url, new=True)
         return False
 
-    '''def move(self, url, newurl):
-        source = os.path.join(self.root, url) + '.md'
-        target = os.path.join(self.root, newurl) + '.md'
-        # normalize root path (just in case somebody defined it absolute,
-        # having some '../' inside) to correctly compare it to the target
-        root = os.path.normpath(self.root)
-        # get root path longest common prefix with normalized target path
-        common = os.path.commonprefix((root, os.path.normpath(target)))
-        # common prefix length must be at least as root length is
-        # otherwise there are probably some '..' links in target path leading
-        # us outside defined root directory
-        if len(common) < len(root):
-            raise RuntimeError(
-                'Possible write attempt outside content directory: '
-                '%s' % newurl)
-        # create folder if it does not exists yet
-        folder = os.path.dirname(target)
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-        os.rename(source, target)'''
 
     def move(self, old_url, new_url):
         if self.exists(new_url):
@@ -360,11 +283,6 @@ class Wiki(object):
         self.collection.update_one({"url": old_url}, {"$set": {"url": new_url}})
 
     def delete(self, url):
-        '''path = self.path(url)
-        if not self.exists(url):
-            return False
-        os.remove(path)
-        return True'''
         result = self.collection.delete_one({"url": url})
         return result.deleted_count > 0
 
@@ -413,7 +331,7 @@ class Wiki(object):
 
     def index(self):
         cursor = self.collection.find({})
-        return [Page(self.db, doc['url']) for doc in cursor]
+        return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
 
     def index_by(self, key):
         pages = {}
@@ -424,33 +342,8 @@ class Wiki(object):
         return pages
 
     def get_by_title(self, title):
-        ''' pages = self.index(attr='title')
-        return pages.get(title) '''
         # META IS WHERE EVERYTHING IS STORED INSIDE OUR COLLECTION (EXCEPT URL)
         return self.collection.find_one({"meta.title": title})
-
-    '''def get_tags(self):
-        pages = self.index()
-        tags = {}
-        for page in pages:
-            pagetags = page.tags.split(',')
-            for tag in pagetags:
-                tag = tag.strip()
-                if tag == '':
-                    continue
-                elif tags.get(tag):
-                    tags[tag].append(page)
-                else:
-                    tags[tag] = [page]
-        return tags '''
-
-    ''' def index_by_tag(self, tag):
-        pages = self.index()
-        tagged = []
-        for page in pages:
-            if tag in page.tags:
-                tagged.append(page)
-        return sorted(tagged, key=lambda x: x.title.lower()) '''
 
     def get_tags(self):
         cursor = self.collection.find({})
@@ -460,23 +353,12 @@ class Wiki(object):
             for tag in pagetags:
                 tag = tag.strip()
                 if tag:
-                    tags.setdefault(tag, []).append(Page(self.db, doc['url']))
+                    tags.setdefault(tag, []).append(Page(DataAccessObject.db, doc['url']))
         return tags
 
     def index_by_tag(self, tag):
         cursor = self.collection.find({"meta.tags": {"$regex": tag, "$options": "i"}})
-        return [Page(self.db, doc['url']) for doc in cursor]
-
-    ''' def search(self, term, ignore_case=True, attrs=['title', 'tags', 'body']):
-        pages = self.index()
-        regex = re.compile(term, re.IGNORECASE if ignore_case else 0)
-        matched = []
-        for page in pages:
-            for attr in attrs:
-                if regex.search(getattr(page, attr)):
-                    matched.append(page)
-                    break
-        return matched '''
+        return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
 
     def search(self, term, ignore_case=True, attrs=['title', 'tags', 'body']):
         regex = re.compile(term, re.IGNORECASE if ignore_case else 0)
@@ -489,7 +371,7 @@ class Wiki(object):
             cursor = self.collection.find({f"meta.{attr}": query})
 
             for doc in cursor:
-                page = Page(self.db, doc['url'])
+                page = Page(DataAccessObject.db, doc['url'])
                 if page not in matched:
                     matched.append(page)
 

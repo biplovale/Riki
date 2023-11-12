@@ -4,10 +4,10 @@ from wiki import DataAccessObject
 from wiki.core import Page
 from unittest.mock import patch
 
+
 class TestPage(unittest.TestCase):
     def setUp(self):
-        self.mock_db = mongomock.MongoClient().db
-        # mock db is connected to DataAccessObject's DB
+        self.mock_db = mongomock.MongoClient().databse
         DataAccessObject.db = self.mock_db
 
     def test_page_load(self):
@@ -25,8 +25,7 @@ class TestPage(unittest.TestCase):
         # test will fail if we cannot load the url from Database
         self.assertEqual(page.url, test_url)
 
-
-    # not sure how works, copied from stack Exchange
+    # patch is used here to simulate unique_id for the test
     @patch('wiki.core.session', {'unique_id': 'test_user'})
     def test_page_save(self):
         # Create a Page instance and call the save method
@@ -41,7 +40,7 @@ class TestPage(unittest.TestCase):
         saved_page = self.mock_db.pages.find_one({"url": test_url})
         # test will fail if data loaded back from Database is not same as what we had loaded
         self.assertEqual(saved_page["content"], test_content)
+
+
 if __name__ == '__main__':
     unittest.main()
-
-
