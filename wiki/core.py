@@ -250,48 +250,104 @@ class Page(object):
 
 # in this class commented code is original code provided
 class Wiki(object):
+    """
+        Wiki class manages the interactions with the wiki pages stored in MongoDB.
+        It provides methods to perform CRUD operations on wiki pages, as well as to search and index them.
+        Attributes:
+            collection (pymongo.collection.Collection): A MongoDB collection that stores the wiki pages.
+        """
     def __init__(self):
+        """
+                Initializes the Wiki object by setting up the MongoDB collection.
+        """
         self.collection = DataAccessObject.db.pages  # Use your MongoDB collection name
 
 
     def exists(self, url):
+        """
+        Checks if a wiki page exists in the database.
+        Parameters:url (str): The URL of the wiki page to check.
+        Returns:bool: True if the page exists, False otherwise.
+        """
         return self.collection.count_documents({"url": url}) > 0
 
     def get(self, url):
+        """
+        Retrieves a wiki page by its URL if it exists.
+        Parameters:url (str): The URL of the wiki page.
+        Returns:Page: The Page object corresponding to the URL, or None if not found.
+        """
         if self.exists(url):
             return Page(DataAccessObject.db, url)
         return None
 
     # to get all the pages by author
     def get_all(self):
+        """
+        Retrieves all wiki pages from the database that belong to an author.
+        Returns:list[Page]: A list of all Page objects.
+        """
         pass
 
     def get_or_404(self, url):
+        """
+        Retrieves a wiki page by its URL or aborts with a 404 error if not found.
+        Parameters:url (str): The URL of the wiki page.
+        Returns:Page: The Page object corresponding to the URL.
+        Raises:HTTPException: A 404 error if the page is not found.
+        """
         page = self.get(url)
         if page:
             return page
         abort(404)
 
     def get_bare(self, url):
+        """
+        Retrieves a new Page object with a given URL if it does not exist in the database.
+        Parameters:url (str): The URL of the wiki page.
+        Returns:Page: A new Page object if the URL does not exist, False otherwise.
+        """
         if not self.exists(url):
             return Page(DataAccessObject.db, url, new=True)
         return False
 
 
     def move(self, old_url, new_url):
+        """
+        Moves a wiki page from an old URL to a new URL.
+        Parameters:
+            old_url (str): The current URL of the wiki page.
+            new_url (str): The new URL for the wiki page
+        Raises:RuntimeError: If a page with the new URL already exists.
+        """
         if self.exists(new_url):
             raise RuntimeError('Target URL already exists: %s' % new_url)
         self.collection.update_one({"url": old_url}, {"$set": {"url": new_url}})
 
     def delete(self, url):
+        """
+        Deletes a wiki page from the database
+        Parameters:url (str): The URL of the wiki page to delete.
+        Returns:bool: True if the page was successfully deleted, False otherwise.
+        """
         result = self.collection.delete_one({"url": url})
         return result.deleted_count > 0
 
     def index(self):
+        """
+        Retrieves an index of all wiki pages.
+        Returns:list[Page]: A list of all Page objects in the database.
+        """
         cursor = self.collection.find({})
         return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
 
     def index_by(self, key):
+        """
+          Retrieves an index of wiki pages, organized by a specified attribute.
+          Parameters:key (str): The attribute by which to organize pages.
+
+          Returns:dict: A dictionary where keys are attribute values and values are lists of Page objects.
+          """
         pages = {}
         for page in self.index():
             value = getattr(page, key, None)
@@ -300,26 +356,48 @@ class Wiki(object):
         return pages
 
     def get_by_title(self, title):
+        """
+        Retrieves a wiki page by its title.
+        Parameters:title (str): The title of the wiki page.
+        Returns:dict: The MongoDB document for the page, or None if not found.
+        """
         # META IS WHERE EVERYTHING IS STORED INSIDE OUR COLLECTION (EXCEPT URL)
         return self.collection.find_one({"meta.title": title})
 
     def get_tags(self):
+        """
+            Retrieves a dictionary of all tags and the pages associated with each tag.
+            Returns:dict: A dictionary where keys are tags and values are lists of Page objects associated with each tag.
+        """
         cursor = self.collection.find({})
         tags = {}
         for doc in cursor:
             pagetags = doc.get("meta", {}).get("tags", "").split(',')
             for tag in pagetags:
                 tag = tag.strip()
-                # checks for empty strings
+                # checks for empty strings in the list
                 if tag:
                     tags.setdefault(tag, []).append(Page(DataAccessObject.db, doc['url']))
         return tags
 
     def index_by_tag(self, tag):
+        """
+        Retrieves a list of pages that have a specific tag.
+        Parameters:tag (str): The tag to search for.
+        Returns:list[Page]: A list of Page objects that have the specified tag.
+        """
         cursor = self.collection.find({"meta.tags": {"$regex": tag, "$options": "i"}})
         return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
 
     def search(self, term, ignore_case=True, attrs=['title', 'tags', 'body']):
+        """
+         Performs a search across wiki pages for a given term.
+         Parameters:
+             term (str): The search term.
+             ignore_case (bool): If True, performs a case-insensitive search. Default is True.
+             attrs (list[str]): The attributes to search in. Default is ['title', 'tags', 'body']
+         Returns:list[Page]: A list of Page objects that match the search criteria.
+         """
         regex = re.compile(term, re.IGNORECASE if ignore_case else 0)
         matched = []
 
