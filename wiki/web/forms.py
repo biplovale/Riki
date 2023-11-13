@@ -7,7 +7,7 @@ from wtforms import BooleanField
 from wtforms import StringField
 from wtforms import TextAreaField
 from wtforms import PasswordField
-from wtforms.validators import InputRequired
+from wtforms.validators import InputRequired, EqualTo, Email
 from wtforms.validators import ValidationError
 
 from wiki.core import clean_url
@@ -55,3 +55,10 @@ class LoginForm(FlaskForm):
             return
         if not user.check_password(field.data):
             raise ValidationError('Username and password do not match.')
+
+
+class SignUpForm(FlaskForm):
+    email = StringField('Email', validators=[InputRequired(), Email()])
+    username = StringField('Username', validators=[InputRequired()])
+    password = PasswordField('Password', validators=[InputRequired()])
+    confirm_password = PasswordField('Confirm Password', validators=[InputRequired(), EqualTo('password')])
