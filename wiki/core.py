@@ -287,49 +287,6 @@ class Wiki(object):
         result = self.collection.delete_one({"url": url})
         return result.deleted_count > 0
 
-    '''def index(self): 
-        """
-            Builds up a list of all the available pages.
-
-            :returns: a list of all the wiki pages
-            :rtype: list
-        """
-        # make sure we always have the absolute path for fixing the
-        # walk path
-        pages = []
-        root = os.path.abspath(self.root)
-        for cur_dir, _, files in os.walk(root):
-            # get the url of the current directory
-            cur_dir_url = cur_dir[len(root)+1:]
-            for cur_file in files:
-                path = os.path.join(cur_dir, cur_file)
-                if cur_file.endswith('.md'):
-                    url = clean_url(os.path.join(cur_dir_url, cur_file[:-3]))
-                    page = Page(path, url)
-                    pages.append(page)
-        return sorted(pages, key=lambda x: x.title.lower()) '''
-
-    '''def index_by(self, key):
-        """
-            Get an index based on the given key.
-
-            Will use the metadata value of the given key to group
-            the existing pages.
-
-            :param str key: the attribute to group the index on.
-
-            :returns: Will return a dictionary where each entry holds
-                a list of pages that share the given attribute.
-            :rtype: dict
-        """
-        pages = {}
-        for page in self.index():
-            value = getattr(page, key)
-            pre = pages.get(value, [])
-            pages[value] = pre.append(page)
-        return pages
-        '''
-
     def index(self):
         cursor = self.collection.find({})
         return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
