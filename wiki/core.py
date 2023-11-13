@@ -310,6 +310,7 @@ class Wiki(object):
             pagetags = doc.get("meta", {}).get("tags", "").split(',')
             for tag in pagetags:
                 tag = tag.strip()
+                # checks for empty strings
                 if tag:
                     tags.setdefault(tag, []).append(Page(DataAccessObject.db, doc['url']))
         return tags
