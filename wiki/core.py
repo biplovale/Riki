@@ -113,11 +113,13 @@ class Processor(object):
         """
         self.html = self.md.convert(self.pre)
 
+    '''
     def split_raw(self):
         """
             Split text into raw meta and content.
         """
         self.meta_raw, self.markdown = self.pre.split('\n\n', 1)
+    '''
 
     def split_raw(self):
         split_result = self.pre.split('\n\n', 1)
@@ -162,8 +164,25 @@ class Processor(object):
 
 # in this class commented code is original code provided
 class Page(object):
+    """
+    Represents a single page in the wiki. This class handles the loading, rendering,
+    and saving of a wiki page from/to a MongoDB database.
 
+    Attributes:
+        db (pymongo.MongoClient): The database client used to interact with MongoDB.
+        url (str): The URL of the wiki page, used as a unique identifier.
+        collection (pymongo.collection.Collection): The MongoDB collection storing the wiki pages.
+        _meta (OrderedDict): Metadata associated with the wiki page.
+        new (bool): Indicates whether the page is new and not yet saved in the database.
+    """
     def __init__(self, db, url, new=False):
+        """
+            Initializes a new instance of the Page class.
+           Parameters:
+               db (pymongo.MongoClient): The database client.
+               url (str): The URL of the wiki page.
+               new (bool): True if the page is new, False otherwise. Default is False.
+        """
         # MongoDB setup
         # instead of path(where page is stored we have database)
         self.db = DataAccessObject.db  # same as one in DataAccess class
@@ -176,10 +195,17 @@ class Page(object):
             self.render()
 
     def __repr__(self):
+        """
+            Returns a string representation of the Page object.
+            Returns:str: A string representation of the Page.
+        """
         return "<Page: {}@{}>".format(self.url, self.path)
 
 
     def load(self):
+        """
+            Loads the page content and metadata from the MongoDB database.
+        """
         # Fetch page from MongoDB
         # collection name is page, initialized in constructor
         # url is like primary key. It is part of the collections schema
@@ -193,12 +219,21 @@ class Page(object):
 
     # won't change as it is just processing pages
     def render(self):
+        """
+        Renders the page content from markdown to HTML.
+        """
         processor = Processor(self.content)
         self._html, self.body, self._meta = processor.process()
 
 
     def save(self, update=True):
         # Prepare data for MongoDB storage
+        """
+        Saves or updates the page content and metadata in the MongoDB database.
+
+        Parameters:
+            update (bool): If True, reloads and re-renders the page after saving. Default is True.
+        """
         page_data = {
             "url": self.url,
             "content": self.body,
@@ -214,6 +249,10 @@ class Page(object):
 
     @property
     def meta(self):
+        """
+        Returns the metadata of the page.
+        Returns:OrderedDict: The metadata of the page.
+        """
         return self._meta
 
     def __getitem__(self, name):
@@ -231,20 +270,36 @@ class Page(object):
 
     @property
     def title(self):
+        """
+        Gets the title of the page from its metadata.
+        Returns:str: The title of the page.
+        """
         # self.url is default value to return
         return self._meta.get('title', self.url)
 
     @title.setter
     def title(self, value):
+        """
+        Sets the title of the page in its metadata.
+        Parameters:value (str): The title to set for the page.
+        """
         # self['title'] = value
         self._meta['title'] = value
 
     @property
     def tags(self):
+        """
+        Gets the tags associated with the page from its metadata.
+        Returns: str: The tags of the page.
+        """
         return self._meta.get('tags', '')
 
     @tags.setter
     def tags(self, value):
+        """
+         Sets the tags for the page in its metadata.
+         Parameters:value (str): The tags to set for the page.
+         """
         self._meta['tags'] = value
 
 
