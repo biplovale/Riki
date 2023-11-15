@@ -95,12 +95,12 @@ class WikiTest(unittest.TestCase):
         # Insert a page with a specific test_title
         test_title = "Unique Title"
         url = "unique-page"
-        self.mock_collection.insert_one({"url": url, "content": "Content", "meta": {"test_title": test_title}})
+        self.mock_collection.insert_one({"url": url, "content": "Content", "meta": {"title": test_title}})
         # Test the get_by_title method
         page = self.wiki.get_by_title(test_title)
         self.assertIsNotNone(page)
         # check if "title" returned is same as  "test_title"
-        self.assertEqual(page.get("meta", {}).get("test_title"), test_title)
+        self.assertEqual(page.get("meta", {}).get("title"), test_title)
 
     def test_search(self):
         # Insert pages with different content and metadata

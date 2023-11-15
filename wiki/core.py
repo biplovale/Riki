@@ -342,7 +342,8 @@ class Wiki(object):
         Retrieves all wiki pages from the database that belong to an author.
         Returns:list[Page]: A list of all Page objects.
         """
-        pass
+        cursor = self.collection.find({"author": session.get('unique_id')})
+        return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
 
     def get_or_404(self, url):
         """
