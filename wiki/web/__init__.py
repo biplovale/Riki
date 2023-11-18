@@ -31,11 +31,11 @@ current_users = LocalProxy(get_users)
 
 def create_app(directory):
     app = Flask(__name__)
-    app.config['CONTENT_DIR'] = directory
+    app.config['RIKI_DIR'] = directory
     app.config['TITLE'] = 'wiki'
     try:
         app.config.from_pyfile(
-            os.path.join(app.config.get('CONTENT_DIR'), 'config.py')
+            os.path.join(app.config.get('RIKI_DIR'), 'config.py')
         )
     except IOError:
         msg = "You need to place a config.py in your content directory."

@@ -62,7 +62,14 @@
 						{% endif %}
 					{% endwith %}
 					{% if form and form.errors %}
-						<div class="alert alert-error">Errors occured verifying your input. Please check the marked fields below.</div>
+						<div class="alert alert-error">
+							<p>Errors occurred verifying your input. Please check the marked fields below:</p>
+							<ul>
+								{% for field, errors in form.errors.items() %}
+									<li>{{ field }}: {{ ', '.join(errors) }}</li>
+								{% endfor %}
+							</ul>
+						</div>
 					{% endif %}
 					{% block content %}
 					{% endblock content %}

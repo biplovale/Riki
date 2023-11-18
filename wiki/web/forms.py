@@ -16,9 +16,9 @@ from wiki.web import current_users
 
 
 class URLForm(FlaskForm):
-    url = StringField('', [InputRequired()])
+    url = StringField('', validators=[InputRequired()])
 
-    def validate_url(form, field):
+    def validate_url(self, field):
         if current_wiki.exists(field.data):
             raise ValidationError('The URL "%s" exists already.' % field.data)
 
@@ -27,7 +27,7 @@ class URLForm(FlaskForm):
 
 
 class SearchForm(FlaskForm):
-    term = StringField('', [InputRequired()])
+    term = StringField('', validators=[InputRequired()])
     ignore_case = BooleanField(
         description='Ignore Case',
         # FIXME: default is not correctly populated
@@ -35,22 +35,22 @@ class SearchForm(FlaskForm):
 
 
 class EditorForm(FlaskForm):
-    title = StringField('', [InputRequired()])
-    body = TextAreaField('', [InputRequired()])
+    title = StringField('', validators=[InputRequired()])
+    body = TextAreaField('', validators=[InputRequired()])
     tags = StringField('')
 
 
 class LoginForm(FlaskForm):
-    name = StringField('', [InputRequired()])
-    password = PasswordField('', [InputRequired()])
+    name = StringField('', validators=[InputRequired()])
+    password = PasswordField('', validators=[InputRequired()])
 
-    def validate_name(form, field):
+    def validate_name(self, field):
         user = current_users.get_user(field.data)
         if not user:
             raise ValidationError('This username does not exist.')
 
-    def validate_password(form, field):
-        user = current_users.get_user(form.name.data)
+    def validate_password(self, field):
+        user = current_users.get_user(self.name.data)
         if not user:
             return
         if not user.check_password(field.data):
