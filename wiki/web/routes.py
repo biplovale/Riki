@@ -87,6 +87,22 @@ def edit(url):
     return render_template('editor.html', form=form, page=page)
 
 
+
+@bp.route('/save/<path:url>/', methods=['POST'])
+@protect
+def save(url):
+    page = current_wiki.get(url)
+    form = EditorForm(obj=page)
+
+    if request.method == 'POST':
+        if not page:
+            page = current_wiki.get_bare(url)
+        form.populate_obj(page)
+        page.save()
+        # flash('"%s" was saved.' % page.title, 'success')
+        return jsonify(success=True)
+    return jsonify("success=False, errors=form.errors")
+
 @bp.route('/preview/', methods=['POST'])
 @protect
 def preview():
