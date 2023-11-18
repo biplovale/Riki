@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Biography
+{% endblock title %}
+
+{% block content %}
+    <div class="bio-content">
+        <h2>Title : {{ page.title }}</h2>
+        <p>Summary : {{ page.content }}</p>
+    </div>
+
+    {% if pages_sent %}
+    <h3>Posts Created</h3> <!-- Add this line for the heading above the table -->
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>URL</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for page in pages_sent %}
+                <tr>
+                    <td><a href="{{ url_for('wiki.display', url=page.url) }}">{{ page.title }}</a></td>
+                    <td><a href="{{ url_for('wiki.display', url=page.url) }}">{{ page.url }}</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>There are no pages yet.</p>
+{% endif %}
+{% endblock content %}
+
+{% block sidebar %}
+    <h3>Biography Actions</h3>
+    <ul class="nav nav-tabs nav-stacked">
+        <li><a href="{{ url_for('wiki.edit', url=page.url) }}">Edit Biography</a></li>
+    </ul>
+{% endblock sidebar %}

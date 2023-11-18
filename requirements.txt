@@ -52,3 +52,5 @@ Werkzeug==2.3.7
 wsproto==1.2.0
 WTForms==3.0.1
 xvfbwrapper==0.2.9
+pymongo==4.6.0
+mongomock==4.1.2

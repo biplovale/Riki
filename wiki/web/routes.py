@@ -33,20 +33,34 @@ def home():
         return display('home')
     return render_template('home.html')
 
-
 @bp.route('/index/')
 @protect
 def index():
     pages = current_wiki.index()
     return render_template('index.html', pages=pages)
 
+# function used to display profile page
+@bp.route('/profile')
+@protect
+def profile():
+    pages = current_wiki.get_all()
+    page = current_wiki.get('bio')
+    if page:
+        return display('bio', pages_sent_by_author=pages)
+    return render_template('bio.html')
 
 @bp.route('/<path:url>/')
 @protect
-def display(url):
+def display(url, pages_sent_by_author=None):
     page = current_wiki.get_or_404(url)
-    return render_template('page.html', page=page)
-
+    # Determine which template to use based on the URL
+    if url == 'home':
+        return render_template('page.html', page=page)
+    elif url == 'bio':
+        page_bio = current_wiki.get(url)
+        if not page_bio:
+            return render_template('bio.html', page=page_bio, pages_sent=pages_sent_by_author)
+        return render_template('page_bio.html', page=page_bio, pages_sent=pages_sent_by_author)
 
 @bp.route('/create/', methods=['GET', 'POST'])
 @protect

@@ -4,7 +4,8 @@ SECRET_KEY='a unique and long key'
 TITLE='Riki' 
 HISTORY_SHOW_MAX=30
 PIC_BASE = '/static/content/'
-CONTENT_DIR = '/Users/smcho/Dropbox/NKU/Course/CSC440/project/Riki/content'
-USER_DIR = '/Users/smcho/Dropbox/NKU/Course/CSC440/project/Riki/user'
 NUMBER_OF_HISTORY = 5
 PRIVATE = True
+USER_DIR = '/Users/gavinsingh/Documents/myRikiFork/Riki/user'
+# connection string to connect to mongoDB
+CONNECTION_STRING = "mongodb+srv://sgavin0813:password_1234@atlascluster.qdshz9s.mongodb.net/"
