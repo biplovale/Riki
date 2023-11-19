@@ -2,7 +2,7 @@
     Routes
     ~~~~~~
 """
-from flask import Blueprint
+from flask import Blueprint, jsonify
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -99,7 +99,6 @@ def save(url):
             page = current_wiki.get_bare(url)
         form.populate_obj(page)
         page.save()
-        # flash('"%s" was saved.' % page.title, 'success')
         return jsonify(success=True)
     return jsonify("success=False, errors=form.errors")
 
