@@ -24,11 +24,13 @@
 {#      <button type="submit" class="btn btn-primary">Submit</button>#}
 {#    </form>#}
 
-    <form class="form form-inline" method="POST">
+    <form class="vertical-form" method="POST">
         {{ form.hidden_tag() }}
         {{ form.name(placeholder='Username') }}
         {{ form.password(placeholder='Password') }}
         {{ form.confirm_password(placeholder='Confirm Password') }}
-    <input type="submit" class="btn btn-primary" value="Sign Up">
+        <input type="submit" class="btn-primary small-btn" value="Sign Up">
     </form>
+
+
 {% endblock content %}
