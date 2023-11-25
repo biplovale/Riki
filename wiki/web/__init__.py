@@ -23,7 +23,7 @@ current_wiki = LocalProxy(get_wiki)
 def get_users():
     users = getattr(g, '_users', None)
     if users is None:
-        users = g._users = UserManager(current_app.config['USER_DIR'])
+        users = g._users = UserManager()
     return users
 
 current_users = LocalProxy(get_users)
