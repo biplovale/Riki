@@ -6,7 +6,6 @@ HISTORY_SHOW_MAX=30
 PIC_BASE = '/static/content/'
 NUMBER_OF_HISTORY = 5
 PRIVATE = True
-USER_DIR = '/Users/aryantandon/Documents/SE-GP/user'
 
 # connection string to connect to mongoDB
 CONNECTION_STRING = "mongodb+srv://sgavin0813:password_1234@atlascluster.qdshz9s.mongodb.net/"
