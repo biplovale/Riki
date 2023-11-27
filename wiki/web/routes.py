@@ -157,15 +157,18 @@ def user_login():
 
 @bp.route('/signup/', methods=['GET', 'POST'])
 def signup():
-
     form = SignUpForm()
     if form.validate_on_submit():
         if form.password.data == form.confirm_password.data:
             user_manager = UserManager()
-            user_manager.add_user(form.name.data, form.password.data)
 
-            flash('Account created successfully. You can now log in.', 'success')
-            return redirect(url_for('wiki.user_login'))
+            # Check if the username already exists
+            if user_manager.user_exists(form.name.data):
+                flash('Username already exists. Please choose a different username.', 'danger')
+            else:
+                user_manager.add_user(form.name.data, form.password.data)
+                flash('Account created successfully. You can now log in.', 'success')
+                return redirect(url_for('wiki.user_login'))
     return render_template('signup.html', form=form)
 
 
