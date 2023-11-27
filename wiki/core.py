@@ -199,7 +199,7 @@ class Page(object):
             Returns a string representation of the Page object.
             Returns:str: A string representation of the Page.
         """
-        return "<Page: {}@{}>".format(self.url, self.path)
+        return "<Page: {}>".format(self.url)
 
 
     def load(self):
