@@ -2,7 +2,7 @@
     Routes
     ~~~~~~
 """
-from flask import Blueprint
+from flask import Blueprint, jsonify
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -88,6 +88,21 @@ def edit(url):
         return redirect(url_for('wiki.display', url=url))
     return render_template('editor.html', form=form, page=page)
 
+
+
+@bp.route('/save/<path:url>/', methods=['POST'])
+@protect
+def save(url):
+    page = current_wiki.get(url)
+    form = EditorForm(obj=page)
+
+    if request.method == 'POST':
+        if not page:
+            page = current_wiki.get_bare(url)
+        form.populate_obj(page)
+        page.save()
+        return jsonify(success=True)
+    return jsonify("success=False, errors=form.errors")
 
 @bp.route('/preview/', methods=['POST'])
 @protect
