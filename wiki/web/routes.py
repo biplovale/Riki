@@ -62,6 +62,7 @@ def display(url, pages_sent_by_author=None):
         if not page_bio:
             return render_template('bio.html', page=page_bio, pages_sent=pages_sent_by_author)
         return render_template('page_bio.html', page=page_bio, pages_sent=pages_sent_by_author)
+    return render_template('page.html', page=page, pages_sent=pages_sent_by_author)
 
 @bp.route('/create/', methods=['GET', 'POST'])
 @protect
