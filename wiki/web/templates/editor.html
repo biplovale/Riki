@@ -9,7 +9,6 @@ Wiki Editor
 	<li class="active"><a href="#editor" data-toggle="tab">Editor</a></li>
 	<li><a href="#preview" data-toggle="tab" id="previewlink">Preview</a></li>
     <li class="pull-right"><span class="msg-view"></span></li>
-
 </ul>
 <div class="tab-content">
 	<div class="tab-pane active" id="editor">
@@ -71,6 +70,7 @@ $(document).ready(function() {
     var thisUrl = window.location.pathname.split('/')[2];
     var msgView = document.querySelector('.msg-view');
     var saveTimeout;
+    var saveClicked = false;
 
     if (!isCreatePage) {
       inputElement.on('input', function() {
@@ -110,12 +110,15 @@ $(document).ready(function() {
       });
 
       window.onbeforeunload = function(event) {
-        if (unsavedChanges) {
+        if (unsavedChanges && !saveClicked) {
           return "You have unsaved changes. Are you sure you want to leave?";
         }
       };
     }
+    $('.btn-success').on('click', function() {
+      saveClicked = true;
     });
+});
 
 
 $('#previewlink').on('click', function() {
