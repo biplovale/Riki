@@ -113,31 +113,27 @@ class Processor(object):
         """
         self.html = self.md.convert(self.pre)
 
-    '''
     def split_raw(self):
-        """
-            Split text into raw meta and content.
-        """
-        self.meta_raw, self.markdown = self.pre.split('\n\n', 1)
-    '''
-
-    def split_raw(self):
-        split_result = self.pre.split('\n\n', 1)
-        if len(split_result) == 2:
-            self.meta_raw, self.markdown = split_result
-        else:
-            self.meta_raw = split_result[0]
-            self.markdown = ""  # or some default value
+        if 'meta' in self.input:
+            self.meta_raw = self.input['meta']
+            self.markdown = self.input.get('content')
 
     def process_meta(self):
+        """
+        Processes the metadata from the raw metadata object.
+        """
         self.meta = OrderedDict()
-        for line in self.meta_raw.split('\n'):
-            key = line.split(':', 1)[0].lower()
-            if key in self.md.Meta:
-                self.meta[key] = '\n'.join(self.md.Meta[key])
-            else:
-                # Handle the missing key, perhaps log a warning or set a default value
-                print(f"Warning: Metadata key '{key}' not found.")
+        if isinstance(self.meta_raw, dict):
+            for key, value in self.meta_raw.items():
+                # Assuming that 'self.md.Meta' is a dictionary of valid metadata keys
+                key = key.lower()
+                if key in self.md:
+                    # If the value is a list, join it with newlines, otherwise just use the value
+                    self.meta[key] = '\n'.join(value) if isinstance(value, list) else value
+                else:
+                    print(f"Warning: Metadata key '{key}' not found.")
+        else:
+            print("Warning: Metadata is not in expected dictionary format.")
 
     def process_post(self):
         """
@@ -162,6 +158,7 @@ class Processor(object):
 
         return self.final, self.markdown, self.meta
 
+
 # in this class commented code is original code provided
 class Page(object):
     """
@@ -175,6 +172,7 @@ class Page(object):
         _meta (OrderedDict): Metadata associated with the wiki page.
         new (bool): Indicates whether the page is new and not yet saved in the database.
     """
+
     def __init__(self, db, url, new=False):
         """
             Initializes a new instance of the Page class.
@@ -201,7 +199,6 @@ class Page(object):
         """
         return "<Page: {}@{}>".format(self.url, self.path)
 
-
     def load(self):
         """
             Loads the page content and metadata from the MongoDB database.
@@ -224,7 +221,6 @@ class Page(object):
         """
         processor = Processor(self.content)
         self._html, self.body, self._meta = processor.process()
-
 
     def save(self, update=True):
         # Prepare data for MongoDB storage
@@ -311,12 +307,12 @@ class Wiki(object):
         Attributes:
             collection (pymongo.collection.Collection): A MongoDB collection that stores the wiki pages.
         """
+
     def __init__(self):
         """
                 Initializes the Wiki object by setting up the MongoDB collection.
         """
         self.collection = DataAccessObject.db.pages  # Use your MongoDB collection name
-
 
     def exists(self, url):
         """
@@ -366,7 +362,6 @@ class Wiki(object):
         if not self.exists(url):
             return Page(DataAccessObject.db, url, new=True)
         return False
-
 
     def move(self, old_url, new_url):
         """

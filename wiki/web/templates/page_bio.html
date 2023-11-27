@@ -9,9 +9,8 @@
         <h2>Title : {{ page.title }}</h2>
         <p>Summary : {{ page.content }}</p>
     </div>
-
-    {% if pages_sent %}
     <h3>Posts Created</h3> <!-- Add this line for the heading above the table -->
+    {% if pages_sent %}
     <table class="table">
         <thead>
             <tr>

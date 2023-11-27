@@ -2,7 +2,7 @@
     Routes
     ~~~~~~
 """
-from flask import Blueprint
+from flask import Blueprint, session
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -44,24 +44,23 @@ def index():
 @bp.route('/profile')
 @protect
 def profile():
-    pages = current_wiki.get_all()
-    page = current_wiki.get('bio')
-    if page:
-        return display('bio', pages_sent_by_author=pages)
+    all_pages = current_wiki.get_all()
+    bio_page = current_wiki.get('bio')
+    if bio_page:
+        return display('bio', pages_sent_by_author=all_pages)
     return render_template('bio.html')
 
 @bp.route('/<path:url>/')
 @protect
 def display(url, pages_sent_by_author=None):
     page = current_wiki.get_or_404(url)
-    # Determine which template to use based on the URL
+
     if url == 'home':
         return render_template('page.html', page=page)
     elif url == 'bio':
-        page_bio = current_wiki.get(url)
-        if not page_bio:
-            return render_template('bio.html', page=page_bio, pages_sent=pages_sent_by_author)
+        page_bio = current_wiki.get_or_404(url)
         return render_template('page_bio.html', page=page_bio, pages_sent=pages_sent_by_author)
+    return render_template('page.html', page=page)
 
 @bp.route('/create/', methods=['GET', 'POST'])
 @protect
@@ -103,9 +102,9 @@ def move(url):
     page = current_wiki.get_or_404(url)
     form = URLForm(obj=page)
     if form.validate_on_submit():
-        newurl = form.url.data
-        current_wiki.move(url, newurl)
-        return redirect(url_for('wiki.display', url=newurl))
+        new_url = form.url.data
+        current_wiki.move(url, new_url)
+        return redirect(url_for('wiki.display', url=new_url))
     return render_template('move.html', form=form, page=page)
 
 
@@ -148,9 +147,10 @@ def user_login():
     form = LoginForm()
     if form.validate_on_submit():
         user = current_users.get_user(form.name.data)
+        session["unique_id"] = form.name.data
         login_user(user)
         user.set('authenticated', True)
-        flash('Login successful.', 'success')
+        flash(f'Login successful, {form.name.data}!', 'success')
         return redirect(request.args.get("next") or url_for('wiki.index'))
     return render_template('login.html', form=form)
 
