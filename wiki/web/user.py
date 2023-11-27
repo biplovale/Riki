@@ -10,70 +10,52 @@ from functools import wraps
 
 from flask import current_app
 from flask_login import current_user
+from wiki import DataAccessObject
 
 
 
 class UserManager(object):
     """A very simple user Manager, that saves it's data as json."""
-    def __init__(self, path):
-        self.file = os.path.join(path, 'users.json')
-
-    def read(self):
-        if not os.path.exists(self.file):
-            return {}
-        with open(self.file) as f:
-            data = json.loads(f.read())
-        return data
-
-    def write(self, data):
-        with open(self.file, 'w') as f:
-            f.write(json.dumps(data, indent=2))
+    def __init__(self):
+        self.collection = DataAccessObject.db.Users
 
     def add_user(self, name, password,
                  active=True, roles=[], authentication_method=None):
-        users = self.read()
-        if users.get(name):
-            return False
         if authentication_method is None:
             authentication_method = get_default_authentication_method()
         new_user = {
+            'name': name,
             'active': active,
             'roles': roles,
             'authentication_method': authentication_method,
             'authenticated': False
         }
-        # Currently we have only two authentication_methods: cleartext and
-        # hash. If we get more authentication_methods, we will need to go to a
-        # strategy object pattern that operates on User.data.
+
         if authentication_method == 'hash':
             new_user['hash'] = make_salted_hash(password)
         elif authentication_method == 'cleartext':
             new_user['password'] = password
         else:
             raise NotImplementedError(authentication_method)
-        users[name] = new_user
-        self.write(users)
-        userdata = users.get(name)
+
+        userdata = self.collection.insert_one(new_user)
         return User(self, name, userdata)
 
     def get_user(self, name):
-        users = self.read()
-        userdata = users.get(name)
+        userdata = self.collection.find_one({"name": name})
+
         if not userdata:
             return None
         return User(self, name, userdata)
 
     def delete_user(self, name):
-        users = self.read()
-        if not users.pop(name, False):
+        user = self.collection.delete_one({"name": name})
+        if not user:
             return False
-        self.write(users)
         return True
 
     def update(self, name, userdata):
-        data = self.read()
-        data[name] = userdata
-        self.write(data)
+        self.collection.update_one({"name": name}, {"$set": userdata})
 
 
 class User(object):

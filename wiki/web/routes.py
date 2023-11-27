@@ -21,6 +21,7 @@ from wiki.web.forms import URLForm
 from wiki.web import current_wiki
 from wiki.web import current_users
 from wiki.web.user import protect
+from wiki.web.user import UserManager
 
 bp = Blueprint('wiki', __name__)
 
@@ -171,11 +172,15 @@ def user_login():
 
 @bp.route('/signup/', methods=['GET', 'POST'])
 def signup():
+
     form = SignUpForm()
     if form.validate_on_submit():
-        # Process signup logic, create a new user, etc.
-        flash('Account created successfully. You can now log in.', 'success')
-        return redirect(url_for('wiki.user_login'))
+        if form.password.data == form.confirm_password.data:
+            user_manager = UserManager()
+            user_manager.add_user(form.name.data, form.password.data)
+
+            flash('Account created successfully. You can now log in.', 'success')
+            return redirect(url_for('wiki.user_login'))
     return render_template('signup.html', form=form)
 
 
