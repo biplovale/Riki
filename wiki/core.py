@@ -441,14 +441,7 @@ class Wiki(object):
         return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
 
     def search(self, term, ignore_case=True, attrs=['title', 'tags', 'body']):
-        """
-         Performs a search across wiki pages for a given term.
-         Parameters:
-             term (str): The search term.
-             ignore_case (bool): If True, performs a case-insensitive search. Default is True.
-             attrs (list[str]): The attributes to search in. Default is ['title', 'tags', 'body']
-         Returns:list[Page]: A list of Page objects that match the search criteria.
-         """
+
         regex = re.compile(term, re.IGNORECASE if ignore_case else 0)
         matched = []
 
@@ -462,5 +455,17 @@ class Wiki(object):
                 page = Page(DataAccessObject.db, doc['url'])
                 if page not in matched:
                     matched.append(page)
+
+        return matched
+
+    def search_by_author(self, term, ignore_case=True):
+        matched = []
+        query = {"author": session.get('unique_id')}
+        cursor = self.collection.find(query)
+
+        for doc in cursor:
+            page = Page(DataAccessObject.db, doc['url'])
+            if page not in matched:
+                matched.append(page)
 
         return matched

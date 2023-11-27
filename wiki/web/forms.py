@@ -32,6 +32,10 @@ class SearchForm(FlaskForm):
         description='Ignore Case',
         # FIXME: default is not correctly populated
         default=True)
+    search_by_author = BooleanField(
+        description='Search by Author',
+        default=False
+    )
 
 
 class EditorForm(FlaskForm):
