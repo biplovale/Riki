@@ -4,9 +4,12 @@
 """
 import re
 from collections import OrderedDict
+from datetime import *
+
 import markdown
 from flask import abort, session
 from flask import url_for
+
 from wiki import DataAccessObject
 
 
@@ -51,7 +54,7 @@ def wikilink(text, url_formatter=None):
     if url_formatter is None:
         url_formatter = url_for
     link_regex = re.compile(
-        r"((?<!\<code\>)\[\[([^<].+?) \s*([|] \s* (.+?) \s*)?]])",
+        r"((?<!<code>)\[\[([^<].+?)\s*([|]\s*(.+?)\s*)?]])",
         re.X | re.U
     )
     for i in link_regex.findall(text):
@@ -92,7 +95,6 @@ class Processor(object):
         self.input = text
         self.markdown = None
         self.meta_raw = None
-
         self.pre = None
         self.html = None
         self.final = None
@@ -109,9 +111,10 @@ class Processor(object):
 
     def process_markdown(self):
         """
-            Convert to HTML.
+            Convert to HTML and extract metadata.
         """
-        self.html = self.md.convert(self.pre)
+        self.html = self.md.convert(self.input)
+        self.meta_raw = self.md.Meta if hasattr(self.md, 'Meta') else {}
 
     def split_raw(self):
         if 'meta' in self.input:
@@ -120,20 +123,12 @@ class Processor(object):
 
     def process_meta(self):
         """
-        Processes the metadata from the raw metadata object.
+        Processes the metadata from the Markdown processor.
         """
         self.meta = OrderedDict()
         if isinstance(self.meta_raw, dict):
             for key, value in self.meta_raw.items():
-                # Assuming that 'self.md.Meta' is a dictionary of valid metadata keys
-                key = key.lower()
-                if key in self.md:
-                    # If the value is a list, join it with newlines, otherwise just use the value
-                    self.meta[key] = '\n'.join(value) if isinstance(value, list) else value
-                else:
-                    print(f"Warning: Metadata key '{key}' not found.")
-        else:
-            print("Warning: Metadata is not in expected dictionary format.")
+                self.meta[key.lower()] = '\n'.join(value) if isinstance(value, list) else value
 
     def process_post(self):
         """
@@ -147,12 +142,10 @@ class Processor(object):
     def process(self):
         """
             Runs the full suite of processing on the given text, all
-            pre and post processing, markdown rendering and meta data
-            handling.
+            pre and post processing, markdown rendering, and metadata handling.
         """
         self.process_pre()
         self.process_markdown()
-        self.split_raw()
         self.process_meta()
         self.process_post()
 
@@ -188,6 +181,8 @@ class Page(object):
         self.collection = self.db.pages  # 'pages' is the MongoDB collection name
         self._meta = OrderedDict()
         self.new = new
+        self.content = ""
+        self._html = ""
         if not new:
             self.load()
             self.render()
@@ -201,43 +196,39 @@ class Page(object):
 
     def load(self):
         """
-            Loads the page content and metadata from the MongoDB database.
+        Loads the page content, metadata, and processed HTML from the MongoDB database.
         """
-        # Fetch page from MongoDB
-        # collection name is page, initialized in constructor
-        # url is like primary key. It is part of the collections schema
         page_data = self.collection.find_one({"url": self.url})
         if page_data:
-            self.content = page_data.get("content", "")
+            self.content = page_data.get("content", "")  # Markdown content
+            self._html = page_data.get("html", "")  # Processed HTML content
             self._meta = page_data.get("meta", {})
         else:
             self.content = ""
+            self._html = ""
             self._meta = OrderedDict()
 
     # won't change as it is just processing pages
     def render(self):
         """
-        Renders the page content from markdown to HTML.
+        Renders the page content from markdown to HTML if not already processed.
         """
-        processor = Processor(self.content)
-        self._html, self.body, self._meta = processor.process()
+        if not self._html:  # Only process if HTML content is not available
+            processor = Processor(self.content)
+            self._html, _, self._meta = processor.process()
 
     def save(self, update=True):
-        # Prepare data for MongoDB storage
-        """
-        Saves or updates the page content and metadata in the MongoDB database.
-
-        Parameters:
-            update (bool): If True, reloads and re-renders the page after saving. Default is True.
-        """
+        current_time = datetime.utcnow()
         page_data = {
             "url": self.url,
-            "content": self.body,
+            "content": self.content,
             "meta": dict(self._meta),
-            # session.get('unique_id') is basically authors name
-            "author": session.get('unique_id') or ""
+            "author": session.get('unique_id') or "",
+            "updated_at": current_time
         }
-        # Save or update page in MongoDB
+        if self.new:
+            page_data["created_at"] = current_time
+
         self.collection.update_one({"url": self.url}, {"$set": page_data}, upsert=True)
         if update:
             self.load()
@@ -423,10 +414,9 @@ class Wiki(object):
         cursor = self.collection.find({})
         tags = {}
         for doc in cursor:
-            pagetags = doc.get("meta", {}).get("tags", "").split(',')
-            for tag in pagetags:
+            page_tags = doc.get("meta", {}).get("tags", "").split(',')
+            for tag in page_tags:
                 tag = tag.strip()
-                # checks for empty strings in the list
                 if tag:
                     tags.setdefault(tag, []).append(Page(DataAccessObject.db, doc['url']))
         return tags
@@ -441,21 +431,15 @@ class Wiki(object):
         return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
 
     def search(self, term, ignore_case=True, attrs=['title', 'tags', 'body']):
-
         regex = re.compile(term, re.IGNORECASE if ignore_case else 0)
         matched = []
-
         for attr in attrs:
             query = {"$regex": regex.pattern, "$options": "i"} if ignore_case else regex.pattern
-            # cursor IS an iterable
-            # THERE ARE sub document 'title', 'tags', 'body IN meta
             cursor = self.collection.find({f"meta.{attr}": query})
-
             for doc in cursor:
                 page = Page(DataAccessObject.db, doc['url'])
                 if page not in matched:
                     matched.append(page)
-
         return matched
 
     def search_by_author(self, term, ignore_case=True):

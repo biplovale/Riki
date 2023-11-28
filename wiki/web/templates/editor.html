@@ -14,7 +14,7 @@ Wiki Editor
 		<form method="post" class="form">
 			{{ form.hidden_tag() }}
 			{{ input(form.title, placeholder="Title", class="span7", autocomplete="off") }}
-			{{ input(form.body, placeholder="Markdown", class="span7", rows="20") }}
+			{{ input(form.content, placeholder="Markdown", class="span7", rows="20") }}
 			{{ input(form.tags, placeholder="Tags (comma separated)", class="span7", autocomplete="off") }}
 			<div class="form-actions">
         <div class="pull-left">

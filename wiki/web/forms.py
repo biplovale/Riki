@@ -40,7 +40,7 @@ class SearchForm(FlaskForm):
 
 class EditorForm(FlaskForm):
     title = StringField('', [InputRequired()])
-    body = TextAreaField('', [InputRequired()])
+    content = TextAreaField('', [InputRequired()])
     tags = StringField('')
 
 

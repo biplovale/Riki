@@ -76,15 +76,18 @@ def create():
 @protect
 def edit(url):
     page = current_wiki.get(url)
-    form = EditorForm(obj=page)
+    if not page:
+        page = current_wiki.get_bare(url)
+
+    form = EditorForm(obj=page)  # Initialize form with page data
+
     if form.validate_on_submit():
-        if not page:
-            page = current_wiki.get_bare(url)
         form.populate_obj(page)
         page.save()
         flash('"%s" was saved.' % page.title, 'success')
         return redirect(url_for('wiki.display', url=url))
     return render_template('editor.html', form=form, page=page)
+
 
 
 @bp.route('/preview/', methods=['POST'])
