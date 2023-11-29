@@ -8,6 +8,7 @@ Wiki Editor
 <ul class="nav nav-tabs">
 	<li class="active"><a href="#editor" data-toggle="tab">Editor</a></li>
 	<li><a href="#preview" data-toggle="tab" id="previewlink">Preview</a></li>
+    <li class="pull-right"><span class="msg-view"></span></li>
 </ul>
 <div class="tab-content">
 	<div class="tab-pane active" id="editor">
@@ -57,6 +58,69 @@ Turns into:
 
 {% block postscripts -%}
 {{ super() }}
+
+$(document).ready(function() {
+    var inputElement = $('input[type="text"], textarea');
+    var isCreatePage = inputElement.filter(function() {
+      return $(this).val().trim() !== '';
+    }).length === 0;
+
+    console.log(isCreatePage);
+
+    var thisUrl = window.location.pathname.split('/')[2];
+    var msgView = document.querySelector('.msg-view');
+    var saveTimeout;
+    var saveClicked = false;
+
+    if (!isCreatePage) {
+      inputElement.on('input', function() {
+        msgView.innerHTML = 'Unsaved changes •';
+        clearTimeout(saveTimeout);
+
+        saveTimeout = setTimeout(function() {
+          var formData = new FormData($('.form')[0]);
+
+          $.ajax({
+            url: `/save/${thisUrl}`,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(msg) {
+              console.log(msg);
+              msgView.innerHTML = 'Saved';
+            },
+            error: function(msg) {
+              console.error(msg);
+              msgView.innerHTML = 'Error';
+            },
+            complete: function() {
+              console.log('Completed!');
+            }
+          });
+        }, 1000);
+      });
+    } else {
+      console.log('isCreatePage');
+      var unsavedChanges = false;
+      console.log('unsavedChanges', unsavedChanges);
+
+      inputElement.on('input', function() {
+        unsavedChanges = true;
+      });
+
+      window.onbeforeunload = function(event) {
+        if (unsavedChanges && !saveClicked) {
+          return "You have unsaved changes. Are you sure you want to leave?";
+        }
+      };
+    }
+    $('.btn-success').on('click', function() {
+      saveClicked = true;
+    });
+});
+
+
 $('#previewlink').on('click', function() {
 	var $form = $('.form');
   var $inputs = $form.find('input, textarea, button');

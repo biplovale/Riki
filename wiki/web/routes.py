@@ -3,6 +3,7 @@
     ~~~~~~
 """
 from flask import Blueprint, session
+from flask import Blueprint, jsonify
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -21,6 +22,8 @@ from wiki.web.forms import LoginForm
 from wiki.web.forms import SearchForm
 from wiki.web.forms import URLForm
 from wiki.web.user import protect
+from wiki.web.user import UserManager
+
 
 bp = Blueprint('wiki', __name__)
 
@@ -64,7 +67,6 @@ def display(url, pages_sent_by_author=None):
         return render_template('page_bio.html', page=page_bio, pages_sent=pages_sent_by_author)
     return render_template('page.html', page=page)
 
-
 @bp.route('/create/', methods=['GET', 'POST'])
 @protect
 def create():
@@ -91,6 +93,21 @@ def edit(url):
         return redirect(url_for('wiki.display', url=url))
     return render_template('editor.html', form=form, page=page)
 
+
+
+@bp.route('/save/<path:url>/', methods=['POST'])
+@protect
+def save(url):
+    page = current_wiki.get(url)
+    form = EditorForm(obj=page)
+
+    if request.method == 'POST':
+        if not page:
+            page = current_wiki.get_bare(url)
+        form.populate_obj(page)
+        page.save()
+        return jsonify(success=True)
+    return jsonify("success=False, errors=form.errors")
 
 @bp.route('/preview/', methods=['POST'])
 @protect
@@ -164,6 +181,23 @@ def user_login():
     return render_template('login.html', form=form)
 
 
+@bp.route('/signup/', methods=['GET', 'POST'])
+def signup():
+    form = SignUpForm()
+    if form.validate_on_submit():
+        if form.password.data == form.confirm_password.data:
+            user_manager = UserManager()
+
+            # Check if the username already exists
+            if user_manager.user_exists(form.name.data):
+                flash('Username already exists. Please choose a different username.', 'danger')
+            else:
+                user_manager.add_user(form.name.data, form.password.data)
+                flash('Account created successfully. You can now log in.', 'success')
+                return redirect(url_for('wiki.user_login'))
+    return render_template('signup.html', form=form)
+
+
 @bp.route('/user/logout/')
 @login_required
 def user_logout():
@@ -180,7 +214,7 @@ def user_index():
 
 @bp.route('/user/create/')
 def user_create():
-    pass
+    return render_template('signup.html')
 
 
 @bp.route('/user/<int:user_id>/')

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}User Registration{% endblock title %}
+
+{% block content %}
+    <form class="vertical-form" method="POST">
+        {{ form.hidden_tag() }}
+        {{ form.name(placeholder='Username') }}
+        {{ form.password(placeholder='Password') }}
+        {{ form.confirm_password(placeholder='Confirm Password') }}
+        <input type="submit" class="btn-primary small-btn" value="Sign Up">
+    </form>
+
+
+{% endblock content %}

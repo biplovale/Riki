@@ -1,5 +1,8 @@
+.git
 venv
 .idea/*
 config.py
 __pycache__/
-Riki.py
+wiki/__pycache__/
+wiki/web/__pycache__/
+.DS_Store
