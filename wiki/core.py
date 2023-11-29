@@ -155,8 +155,7 @@ class Processor(object):
 # in this class commented code is original code provided
 class Page(object):
     """
-    Represents a single page in the wiki. This class handles the loading, rendering,
-    and saving of a wiki page from/to a MongoDB database.
+    Represents a single page in the wiki.
 
     Attributes:
         db (pymongo.MongoClient): The database client used to interact with MongoDB.
@@ -166,7 +165,7 @@ class Page(object):
         new (bool): Indicates whether the page is new and not yet saved in the database.
     """
 
-    def __init__(self, db, url, new=False):
+    def __init__(self, db, url, new_flag=False):
         """
             Initializes a new instance of the Page class.
            Parameters:
@@ -174,16 +173,14 @@ class Page(object):
                url (str): The URL of the wiki page.
                new (bool): True if the page is new, False otherwise. Default is False.
         """
-        # MongoDB setup
-        # instead of path(where page is stored we have database)
-        self.db = DataAccessObject.db  # same as one in DataAccess class
         self.url = url
-        self.collection = self.db.pages  # 'pages' is the MongoDB collection name
+        self.collection = db.pages  # 'pages' is the MongoDB collection name
         self._meta = OrderedDict()
-        self.new = new
+        self.new = new_flag
         self.content = ""
         self._html = ""
-        if not new:
+        self._tags = ""
+        if not self.new:
             self.load()
             self.render()
 
@@ -194,20 +191,6 @@ class Page(object):
         """
         return "<Page: {}@{}>".format(self.url, self.path)
 
-    def load(self):
-        """
-        Loads the page content, metadata, and processed HTML from the MongoDB database.
-        """
-        page_data = self.collection.find_one({"url": self.url})
-        if page_data:
-            self.content = page_data.get("content", "")  # Markdown content
-            self._html = page_data.get("html", "")  # Processed HTML content
-            self._meta = page_data.get("meta", {})
-        else:
-            self.content = ""
-            self._html = ""
-            self._meta = OrderedDict()
-
     # won't change as it is just processing pages
     def render(self):
         """
@@ -217,12 +200,32 @@ class Page(object):
             processor = Processor(self.content)
             self._html, _, self._meta = processor.process()
 
+    def load(self):
+        """
+        Loads the page content, metadata, processed HTML, and tags from the MongoDB database.
+        """
+        page_data = self.collection.find_one({"url": self.url})
+        if page_data:
+            self.content = page_data.get("content", "")
+            self._html = page_data.get("html", "")
+            self._meta = page_data.get("meta", {})
+            self._tags = page_data.get("tags", "")  # Load tags
+        else:
+            self.content = ""
+            self._html = ""
+            self._meta = OrderedDict()
+            self._tags = ""  # Initialize tags
+
     def save(self, update=True):
+        """
+        Saves the page content, metadata, processed HTML, and tags to the MongoDB database.
+        """
         current_time = datetime.utcnow()
         page_data = {
             "url": self.url,
             "content": self.content,
             "meta": dict(self._meta),
+            "tags": self._tags,  # Save tags
             "author": session.get('unique_id') or "",
             "updated_at": current_time
         }
@@ -233,6 +236,22 @@ class Page(object):
         if update:
             self.load()
             self.render()
+
+    @property
+    def tags(self):
+        """
+        Gets the tags associated with the page.
+        Returns: str: The tags of the page.
+        """
+        return self._tags
+
+    @tags.setter
+    def tags(self, value):
+        """
+        Sets the tags for the page.
+        Parameters:value (str): The tags to set for the page.
+        """
+        self._tags = value
 
     @property
     def meta(self):
@@ -270,27 +289,9 @@ class Page(object):
         Sets the title of the page in its metadata.
         Parameters:value (str): The title to set for the page.
         """
-        # self['title'] = value
         self._meta['title'] = value
 
-    @property
-    def tags(self):
-        """
-        Gets the tags associated with the page from its metadata.
-        Returns: str: The tags of the page.
-        """
-        return self._meta.get('tags', '')
 
-    @tags.setter
-    def tags(self, value):
-        """
-         Sets the tags for the page in its metadata.
-         Parameters:value (str): The tags to set for the page.
-         """
-        self._meta['tags'] = value
-
-
-# in this class commented code is original code provided
 class Wiki(object):
     """
         Wiki class manages the interactions with the wiki pages stored in MongoDB.
@@ -351,7 +352,7 @@ class Wiki(object):
         Returns:Page: A new Page object if the URL does not exist, False otherwise.
         """
         if not self.exists(url):
-            return Page(DataAccessObject.db, url, new=True)
+            return Page(DataAccessObject.db, url, new_flag=True)
         return False
 
     def move(self, old_url, new_url):
@@ -408,13 +409,12 @@ class Wiki(object):
 
     def get_tags(self):
         """
-            Retrieves a dictionary of all tags and the pages associated with each tag.
-            Returns:dict: A dictionary where keys are tags and values are lists of Page objects associated with each tag.
+        Retrieves a dictionary of all tags and the pages associated with each tag.
         """
         cursor = self.collection.find({})
         tags = {}
         for doc in cursor:
-            page_tags = doc.get("meta", {}).get("tags", "").split(',')
+            page_tags = doc.get("tags", "").split(',')
             for tag in page_tags:
                 tag = tag.strip()
                 if tag:
@@ -424,10 +424,8 @@ class Wiki(object):
     def index_by_tag(self, tag):
         """
         Retrieves a list of pages that have a specific tag.
-        Parameters:tag (str): The tag to search for.
-        Returns:list[Page]: A list of Page objects that have the specified tag.
         """
-        cursor = self.collection.find({"meta.tags": {"$regex": tag, "$options": "i"}})
+        cursor = self.collection.find({"tags": {"$regex": tag, "$options": "i"}})
         return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
 
     def search(self, term, ignore_case=True, attrs=['title', 'tags', 'body']):

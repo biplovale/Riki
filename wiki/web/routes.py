@@ -14,14 +14,13 @@ from flask_login import login_user
 from flask_login import logout_user
 
 from wiki.core import Processor
+from wiki.web import current_users
+from wiki.web import current_wiki
 from wiki.web.forms import EditorForm
 from wiki.web.forms import LoginForm
 from wiki.web.forms import SearchForm
 from wiki.web.forms import URLForm
-from wiki.web import current_wiki
-from wiki.web import current_users
 from wiki.web.user import protect
-
 
 bp = Blueprint('wiki', __name__)
 
@@ -34,11 +33,13 @@ def home():
         return display('home')
     return render_template('home.html')
 
+
 @bp.route('/index/')
 @protect
 def index():
     pages = current_wiki.index()
     return render_template('index.html', pages=pages)
+
 
 # function used to display profile page
 @bp.route('/profile')
@@ -49,6 +50,7 @@ def profile():
     if bio_page:
         return display('bio', pages_sent_by_author=all_pages)
     return render_template('bio.html')
+
 
 @bp.route('/<path:url>/')
 @protect
@@ -61,6 +63,7 @@ def display(url, pages_sent_by_author=None):
         page_bio = current_wiki.get_or_404(url)
         return render_template('page_bio.html', page=page_bio, pages_sent=pages_sent_by_author)
     return render_template('page.html', page=page)
+
 
 @bp.route('/create/', methods=['GET', 'POST'])
 @protect
@@ -78,16 +81,15 @@ def edit(url):
     page = current_wiki.get(url)
     if not page:
         page = current_wiki.get_bare(url)
-
+    print("Page Title:", page.title)
+    print("Page Tags:", page.title)
     form = EditorForm(obj=page)  # Initialize form with page data
-
     if form.validate_on_submit():
         form.populate_obj(page)
         page.save()
         flash('"%s" was saved.' % page.title, 'success')
         return redirect(url_for('wiki.display', url=url))
     return render_template('editor.html', form=form, page=page)
-
 
 
 @bp.route('/preview/', methods=['POST'])
@@ -145,7 +147,7 @@ def search():
             results = current_wiki.search(form.term.data, form.ignore_case.data)
 
         return render_template('search.html', form=form,
-                                       results=results, search=form.term.data)
+                               results=results, search=form.term.data)
     return render_template('search.html', form=form, search=None)
 
 
@@ -200,4 +202,3 @@ def user_delete(user_id):
 @bp.errorhandler(404)
 def page_not_found(error):
     return render_template('404.html'), 404
-

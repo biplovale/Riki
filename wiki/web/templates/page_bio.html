@@ -6,10 +6,10 @@
 
 {% block content %}
     <div class="bio-content">
-        <h2>Title : {{ page.title }}</h2>
-        <p>Summary : {{ page.content }}</p>
+        <h2> {{ page.title }}</h2>
+        <p> {{ page.content }}</p>
     </div>
-    <h3>Posts Created</h3> <!-- Add this line for the heading above the table -->
+    <h3>Posts Created</h3> <!-- Heading above the table -->
     {% if pages_sent %}
     <table class="table">
         <thead>
@@ -20,10 +20,12 @@
         </thead>
         <tbody>
             {% for page in pages_sent %}
-                <tr>
-                    <td><a href="{{ url_for('wiki.display', url=page.url) }}">{{ page.title }}</a></td>
-                    <td><a href="{{ url_for('wiki.display', url=page.url) }}">{{ page.url }}</a></td>
-                </tr>
+                {% if page.url != "home" and page.url != "bio" %}
+                    <tr>
+                        <td><a href="{{ url_for('wiki.display', url=page.url) }}">{{ page.title }}</a></td>
+                        <td><a href="{{ url_for('wiki.display', url=page.url) }}">{{ page.url }}</a></td>
+                    </tr>
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>
