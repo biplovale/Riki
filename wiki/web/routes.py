@@ -14,15 +14,13 @@ from flask_login import login_user
 from flask_login import logout_user
 
 from wiki.core import Processor
-from wiki.web import current_users
+from wiki.web import current_users, user
 from wiki.web import current_wiki
 from wiki.web.forms import EditorForm, SignUpForm
 from wiki.web.forms import LoginForm
 from wiki.web.forms import SearchForm
 from wiki.web.forms import URLForm
-from wiki.web.user import protect
-from wiki.web.user import UserManager
-
+from wiki.web.user import *
 
 bp = Blueprint('wiki', __name__)
 
@@ -30,10 +28,12 @@ bp = Blueprint('wiki', __name__)
 @bp.route('/')
 @protect
 def home():
-    page = current_wiki.get('home')
-    if page:
-        return display('home')
-    return render_template('home.html')
+    if User.is_authenticated:
+        page = current_wiki.get('home')
+        if page:
+            return display('home')
+        return render_template('home.html')
+    return redirect(url_for('user_login'))
 
 
 @bp.route('/index/')
