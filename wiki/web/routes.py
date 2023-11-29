@@ -2,8 +2,7 @@
     Routes
     ~~~~~~
 """
-from flask import Blueprint, session
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify ,session
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -17,7 +16,7 @@ from flask_login import logout_user
 from wiki.core import Processor
 from wiki.web import current_users
 from wiki.web import current_wiki
-from wiki.web.forms import EditorForm
+from wiki.web.forms import EditorForm, SignUpForm
 from wiki.web.forms import LoginForm
 from wiki.web.forms import SearchForm
 from wiki.web.forms import URLForm
@@ -83,10 +82,9 @@ def edit(url):
     page = current_wiki.get(url)
     if not page:
         page = current_wiki.get_bare(url)
-    print("Page Title:", page.title)
-    print("Page Tags:", page.title)
     form = EditorForm(obj=page)  # Initialize form with page data
     if form.validate_on_submit():
+        print(page.title)
         form.populate_obj(page)
         page.save()
         flash('"%s" was saved.' % page.title, 'success')
@@ -187,12 +185,12 @@ def signup():
     if form.validate_on_submit():
         if form.password.data == form.confirm_password.data:
             user_manager = UserManager()
-
             # Check if the username already exists
             if user_manager.user_exists(form.name.data):
                 flash('Username already exists. Please choose a different username.', 'danger')
             else:
                 user_manager.add_user(form.name.data, form.password.data)
+
                 flash('Account created successfully. You can now log in.', 'success')
                 return redirect(url_for('wiki.user_login'))
     return render_template('signup.html', form=form)
