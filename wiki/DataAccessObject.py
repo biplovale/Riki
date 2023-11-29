@@ -1,7 +1,17 @@
-from pymongo import MongoClient
 import certifi
-from config import *
+from pymongo import MongoClient
 
-client = MongoClient(CONNECTION_STRING, tlsCAFile=certifi.where())
-db = client.wikiDB
-# name of our collection is pages and it is available in core.py -> Page class
+from config import *
+class DatabaseSingleton:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(DatabaseSingleton, cls).__new__(cls)
+            cls._instance.client = MongoClient(CONNECTION_STRING, tlsCAFile=certifi.where())
+            cls._instance.db = cls._instance.client.wikiDB
+        return cls._instance
+
+
+# Now, you can create a single instance of your database like this:
+db = DatabaseSingleton().db
