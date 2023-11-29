@@ -133,3 +133,4 @@ def protect(f):
             return current_app.login_manager.unauthorized()
         return f(*args, **kwargs)
     return wrapper
+
