@@ -173,6 +173,7 @@ class Page(object):
                url (str): The URL of the wiki page.
                new (bool): True if the page is new, False otherwise. Default is False.
         """
+        self.path = ""
         self.url = url
         self.collection = db.pages  # 'pages' is the MongoDB collection name
         self._meta = OrderedDict()
@@ -392,49 +393,30 @@ class Wiki(object):
         cursor = self.collection.find({"author": author_id})
         return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
 
-    def index_by(self, key):
-        """
-          Retrieves an index of wiki pages, organized by a specified attribute.
-          Parameters:key (str): The attribute by which to organize pages.
-
-          Returns:dict: A dictionary where keys are attribute values and values are lists of Page objects.
-          """
-        author_id = session.get('unique_id')
-        pages = {}
-        cursor = self.collection.find({"author": author_id})
-        for doc in cursor:
-            page = Page(DataAccessObject.db, doc['url'])
-            value = getattr(page, key, None)
-            if value:
-                pages.setdefault(value, []).append(page)
-        return pages
-
     def get_by_title(self, title):
         """
         Retrieves a wiki page by its title.
         Parameters:title (str): The title of the wiki page.
         Returns:dict: The MongoDB document for the page, or None if not found.
         """
-        # META IS WHERE EVERYTHING IS STORED INSIDE OUR COLLECTION (EXCEPT URL)
         author_id = session.get('unique_id')
         query = {"meta.title": title, "author": author_id}
         return self.collection.find_one(query)
 
     def get_tags(self):
-        """
-        Retrieves a dictionary of all tags and the pages associated with each tag.
-        """
         author_id = session.get('unique_id')
-        cursor = self.collection.find({"author": author_id})
-        tags = {}
 
-        for doc in cursor:
+        # Fetch and store documents in a list
+        documents = list(self.collection.find({"author": author_id}))
+
+        tags = {}
+        for doc in documents:
             page_tags = doc.get("tags", "").split(',')
             for tag in page_tags:
                 tag = tag.strip()
                 if tag:
-                    tags.setdefault(tag, []).append(Page(DataAccessObject.db, doc['url']))
-
+                    # Appending only the URL of the page to the tag's list
+                    tags.setdefault(tag, []).append(doc['url'])
         return tags
 
     def index_by_tag(self, tag):
@@ -444,23 +426,24 @@ class Wiki(object):
         author_id = session.get('unique_id')
         query = {"tags": {"$regex": tag, "$options": "i"}, "author": author_id}
         cursor = self.collection.find(query)
-        return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
+        pages = [Page(DataAccessObject.db, doc['url']) for doc in cursor]
+        return pages
 
     def search(self, term, ignore_case=True, attrs=['title', 'tags', 'body']):
-            regex = re.compile(term, re.IGNORECASE if ignore_case else 0)
-            matched = []
-            for attr in attrs:
-                query = {"$regex": regex.pattern, "$options": "i"} if ignore_case else regex.pattern
-                cursor = self.collection.find({f"meta.{attr}": query})
-                for doc in cursor:
-                    page = Page(DataAccessObject.db, doc['url'])
-                    if page not in matched:
-                        matched.append(page)
-            return matched
-
-    def search_by_author(self, term, ignore_case=True):
+        regex = re.compile(term, re.IGNORECASE if ignore_case else 0)
         matched = []
-        query = {"author": session.get('unique_id')}
+        for attr in attrs:
+            query = {"$regex": regex.pattern, "$options": "i"} if ignore_case else regex.pattern
+            cursor = self.collection.find({f"meta.{attr}": query})
+            for doc in cursor:
+                page = Page(DataAccessObject.db, doc['url'])
+                if page not in matched:
+                    matched.append(page)
+        return matched
+
+    def search_by_author(self, author_name):
+        matched = []
+        query = {"author": author_name}
         cursor = self.collection.find(query)
 
         for doc in cursor:

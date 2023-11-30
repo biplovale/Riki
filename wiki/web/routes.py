@@ -8,7 +8,6 @@ from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
-from flask_login import current_user
 from flask_login import login_required
 from flask_login import login_user
 from flask_login import logout_user
@@ -28,6 +27,7 @@ bp = Blueprint('wiki', __name__)
 @bp.route('/')
 @protect
 def home():
+    # return render_template('home.html')
     if User.is_authenticated:
         page = current_wiki.get('home')
         if page:
@@ -157,7 +157,8 @@ def search():
     form = SearchForm()
     if form.validate_on_submit():
         if form.search_by_author.data:
-            results = current_wiki.search_by_author(form.term.data, form.ignore_case.data)
+
+            results = current_wiki.search_by_author(form.term.data)
         else:
             results = current_wiki.search(form.term.data, form.ignore_case.data)
 
