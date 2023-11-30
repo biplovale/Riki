@@ -2,7 +2,9 @@
     Routes
     ~~~~~~
 """
-from flask import Blueprint, jsonify, session
+import os.path
+
+from flask import Blueprint, jsonify, session, send_file
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -68,10 +70,11 @@ def profile():
 def display(url, pages_sent_by_author=None):
     page = current_wiki.get_or_404(url)
 
-    file_extension = search_file_in_directory(img, url)
+    user_name = session["unique_id"]
+    file_extension = search_file_in_directory(img, user_name + '-' + url)
 
     if file_extension:
-        page_image = f"{url}{file_extension}"
+        page_image = f"{user_name}-{url}{file_extension}"
     else:
         page_image = ''
 
@@ -107,11 +110,12 @@ def search_file_in_directory(directory, filename):
 @protect
 def edit(url):
     page = current_wiki.get(url)
+    user_name = session["unique_id"]
 
-    file_extension = search_file_in_directory(img, url)
+    file_extension = search_file_in_directory(img, user_name + '-' + url)
 
     if file_extension:
-        page_image = f"{url}{file_extension}"
+        page_image = f"{user_name}-{url}{file_extension}"
     else:
         page_image = ''
 
@@ -130,7 +134,7 @@ def edit(url):
 
             original_file_name = secure_filename(file.filename)
             file_extension = original_file_name.split('.', 1)[-1]
-            new_file_name = f"{url}.{file_extension}"
+            new_file_name = f"{user_name}-{url}.{file_extension}"
 
             file.save(os.path.join(img, new_file_name))
             flash('Image uploaded successfully!', 'success')
@@ -180,6 +184,25 @@ def move(url):
         current_wiki.move(url, new_url)
         return redirect(url_for('wiki.display', url=new_url))
     return render_template('move.html', form=form, page=page)
+
+
+@bp.route('/download_image/<path:url>/')
+@protect
+def download_image(url):
+    user_name = session["unique_id"]
+
+    file_extension = search_file_in_directory(img, user_name + '-' + url)
+
+
+    page_image = f"{user_name}-{url}{file_extension}"
+
+    image_path = os.path.join(img, page_image)
+
+
+    # Set the filename that the user will see when downloading
+    filename = page_image
+
+    return send_file(image_path, as_attachment=True, download_name=filename)
 
 
 @bp.route('/delete/<path:url>/')

@@ -36,6 +36,10 @@
 <ul class="nav nav-tabs nav-stacked">
 	<li><a href="{{ url_for('wiki.edit', url=page.url) }}">Edit</a></li>
   <li><a href="{{ url_for('wiki.move', url=page.url) }}">Move</a></li>
+    {%  if image != '' %}
+    <li><a href="{{ url_for('wiki.download_image', url=page.url) }}" data-toggle="modal">Download Image</a></li>
+    {%  endif %}
   <li><a href="#confirmDelete" data-toggle="modal" class="text-error">Delete</a></li>
+
 </ul>
 {% endblock sidebar %}
