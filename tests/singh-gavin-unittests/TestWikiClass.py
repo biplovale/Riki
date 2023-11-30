@@ -1,11 +1,13 @@
 import unittest
+
 import mongomock
+from flask import session
+
 from wiki import Wiki, DataAccessObject
 from wiki.core import Page
 
 
 class WikiTest(unittest.TestCase):
-
     def setUp(self):
         # Create a mock MongoDB collection
         self.mock_db = mongomock.MongoClient().db

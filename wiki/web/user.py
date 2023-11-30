@@ -23,6 +23,7 @@ class UserManager(object):
                  active=True, roles=[], authentication_method=None):
         if authentication_method is None:
             authentication_method = get_default_authentication_method()
+
         new_user = {
             'name': name,
             'active': active,
@@ -56,6 +57,10 @@ class UserManager(object):
 
     def update(self, name, userdata):
         self.collection.update_one({"name": name}, {"$set": userdata})
+
+    def user_exists(self, name):
+        # Check if a user with the given name already exists
+        return self.collection.find_one({'name': name}) is not None
 
 
 class User(object):
@@ -128,3 +133,4 @@ def protect(f):
             return current_app.login_manager.unauthorized()
         return f(*args, **kwargs)
     return wrapper
+

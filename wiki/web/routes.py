@@ -2,7 +2,7 @@
     Routes
     ~~~~~~
 """
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify ,session
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -13,14 +13,14 @@ from flask_login import login_required
 from flask_login import login_user
 from flask_login import logout_user
 
+from wiki.core import Processor
+from wiki.web import current_users, user
+from wiki.web import current_wiki
 from wiki.web.forms import EditorForm, SignUpForm
 from wiki.web.forms import LoginForm
 from wiki.web.forms import SearchForm
 from wiki.web.forms import URLForm
-from wiki.web import current_wiki
-from wiki.web import current_users
-from wiki.web.user import protect
-from wiki.web.user import UserManager
+from wiki.web.user import *
 
 bp = Blueprint('wiki', __name__)
 
@@ -28,10 +28,12 @@ bp = Blueprint('wiki', __name__)
 @bp.route('/')
 @protect
 def home():
-    page = current_wiki.get('home')
-    if page:
-        return display('home')
-    return render_template('home.html')
+    if User.is_authenticated:
+        page = current_wiki.get('home')
+        if page:
+            return display('home')
+        return render_template('home.html')
+    return redirect(url_for('user_login'))
 
 
 @bp.route('/index/')
@@ -45,10 +47,10 @@ def index():
 @bp.route('/profile')
 @protect
 def profile():
-    pages = current_wiki.get_all()
-    page = current_wiki.get('bio')
-    if page:
-        return display('bio', pages_sent_by_author=pages)
+    all_pages = current_wiki.get_all()
+    bio_page = current_wiki.get('bio')
+    if bio_page:
+        return display('bio', pages_sent_by_author=all_pages)
     return render_template('bio.html')
 
 
@@ -56,16 +58,13 @@ def profile():
 @protect
 def display(url, pages_sent_by_author=None):
     page = current_wiki.get_or_404(url)
-    # Determine which template to use based on the URL
+
     if url == 'home':
         return render_template('page.html', page=page)
     elif url == 'bio':
-        page_bio = current_wiki.get(url)
-        if not page_bio:
-            return render_template('bio.html', page=page_bio, pages_sent=pages_sent_by_author)
+        page_bio = current_wiki.get_or_404(url)
         return render_template('page_bio.html', page=page_bio, pages_sent=pages_sent_by_author)
-    return render_template('page.html', page=page, pages_sent=pages_sent_by_author)
-
+    return render_template('page.html', page=page)
 
 @bp.route('/create/', methods=['GET', 'POST'])
 @protect
@@ -81,15 +80,17 @@ def create():
 @protect
 def edit(url):
     page = current_wiki.get(url)
-    form = EditorForm(obj=page)
+    if not page:
+        page = current_wiki.get_bare(url)
+    form = EditorForm(obj=page)  # Initialize form with page data
     if form.validate_on_submit():
-        if not page:
-            page = current_wiki.get_bare(url)
+        print(page.title)
         form.populate_obj(page)
         page.save()
         flash('"%s" was saved.' % page.title, 'success')
         return redirect(url_for('wiki.display', url=url))
     return render_template('editor.html', form=form, page=page)
+
 
 
 @bp.route('/save/<path:url>/', methods=['POST'])
@@ -106,7 +107,6 @@ def save(url):
         return jsonify(success=True)
     return jsonify("success=False, errors=form.errors")
 
-
 @bp.route('/preview/', methods=['POST'])
 @protect
 def preview():
@@ -122,9 +122,9 @@ def move(url):
     page = current_wiki.get_or_404(url)
     form = URLForm(obj=page)
     if form.validate_on_submit():
-        newurl = form.url.data
-        current_wiki.move(url, newurl)
-        return redirect(url_for('wiki.display', url=newurl))
+        new_url = form.url.data
+        current_wiki.move(url, new_url)
+        return redirect(url_for('wiki.display', url=new_url))
     return render_template('move.html', form=form, page=page)
 
 
@@ -156,7 +156,11 @@ def tag(name):
 def search():
     form = SearchForm()
     if form.validate_on_submit():
-        results = current_wiki.search(form.term.data, form.ignore_case.data)
+        if form.search_by_author.data:
+            results = current_wiki.search_by_author(form.term.data, form.ignore_case.data)
+        else:
+            results = current_wiki.search(form.term.data, form.ignore_case.data)
+
         return render_template('search.html', form=form,
                                results=results, search=form.term.data)
     return render_template('search.html', form=form, search=None)
@@ -167,9 +171,10 @@ def user_login():
     form = LoginForm()
     if form.validate_on_submit():
         user = current_users.get_user(form.name.data)
+        session["unique_id"] = form.name.data
         login_user(user)
         user.set('authenticated', True)
-        flash('Login successful.', 'success')
+        flash(f'Login successful, {form.name.data}!', 'success')
         return redirect(request.args.get("next") or url_for('wiki.index'))
     return render_template('login.html', form=form)
 
@@ -180,10 +185,14 @@ def signup():
     if form.validate_on_submit():
         if form.password.data == form.confirm_password.data:
             user_manager = UserManager()
-            user_manager.add_user(form.name.data, form.password.data)
+            # Check if the username already exists
+            if user_manager.user_exists(form.name.data):
+                flash('Username already exists. Please choose a different username.', 'danger')
+            else:
+                user_manager.add_user(form.name.data, form.password.data)
 
-            flash('Account created successfully. You can now log in.', 'success')
-            return redirect(url_for('wiki.user_login'))
+                flash('Account created successfully. You can now log in.', 'success')
+                return redirect(url_for('wiki.user_login'))
     return render_template('signup.html', form=form)
 
 
