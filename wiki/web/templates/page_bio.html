@@ -35,6 +35,9 @@
 {% endblock content %}
 
 {% block sidebar %}
+{% if image != '' %}
+    <img src= "{{ url_for('wiki.static', filename='Images/' + image) }}" alt="img">
+{% endif %}
     <h3>Biography Actions</h3>
     <ul class="nav nav-tabs nav-stacked">
         <li><a href="{{ url_for('wiki.edit', url=page.url) }}">Edit Biography</a></li>

@@ -2,7 +2,9 @@
     Routes
     ~~~~~~
 """
-from flask import Blueprint, jsonify ,session
+import os.path
+
+from flask import Blueprint, jsonify, session, send_file
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -12,6 +14,7 @@ from flask_login import current_user
 from flask_login import login_required
 from flask_login import login_user
 from flask_login import logout_user
+from werkzeug.utils import secure_filename
 
 from wiki.core import Processor
 from wiki.web import current_users, user
@@ -22,7 +25,15 @@ from wiki.web.forms import SearchForm
 from wiki.web.forms import URLForm
 from wiki.web.user import *
 
-bp = Blueprint('wiki', __name__)
+bp = Blueprint('wiki', __name__, static_folder='static', static_url_path='/static')
+img = os.path.join(bp.static_folder, 'Images')
+
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @bp.route('/')
@@ -59,12 +70,21 @@ def profile():
 def display(url, pages_sent_by_author=None):
     page = current_wiki.get_or_404(url)
 
+    user_name = session["unique_id"]
+    file_extension = search_file_in_directory(img, user_name + '-' + url)
+
+    if file_extension:
+        page_image = f"{user_name}-{url}{file_extension}"
+    else:
+        page_image = ''
+
     if url == 'home':
-        return render_template('page.html', page=page)
+        return render_template('page.html', page=page, image=page_image)
     elif url == 'bio':
         page_bio = current_wiki.get_or_404(url)
-        return render_template('page_bio.html', page=page_bio, pages_sent=pages_sent_by_author)
-    return render_template('page.html', page=page)
+        return render_template('page_bio.html', page=page_bio, pages_sent=pages_sent_by_author, image=page_image)
+    return render_template('page.html', page=page, image=page_image)
+
 
 @bp.route('/create/', methods=['GET', 'POST'])
 @protect
@@ -76,20 +96,57 @@ def create():
     return render_template('create.html', form=form)
 
 
+def search_file_in_directory(directory, filename):
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            # Compare filenames without extensions
+            if os.path.splitext(file)[0] == os.path.splitext(filename)[0]:
+                file_extension = os.path.splitext(file)[1]
+                return file_extension
+    return None
+
+
 @bp.route('/edit/<path:url>/', methods=['GET', 'POST'])
 @protect
 def edit(url):
     page = current_wiki.get(url)
+    user_name = session["unique_id"]
+
+    file_extension = search_file_in_directory(img, user_name + '-' + url)
+
+    if file_extension:
+        page_image = f"{user_name}-{url}{file_extension}"
+    else:
+        page_image = ''
+
     if not page:
         page = current_wiki.get_bare(url)
-    form = EditorForm(obj=page)  # Initialize form with page data
+
+    form = EditorForm(obj=page)
+
+    # Initialize form with page data
     if form.validate_on_submit():
-        print(page.title)
         form.populate_obj(page)
+
+        upload_image = form.image.data
+        if upload_image and allowed_file(upload_image.filename):
+            file = upload_image
+
+            original_file_name = secure_filename(file.filename)
+            file_extension = original_file_name.split('.', 1)[-1]
+            new_file_name = f"{user_name}-{url}.{file_extension}"
+
+            file.save(os.path.join(img, new_file_name))
+            flash('Image uploaded successfully!', 'success')
+        elif upload_image is None:
+            pass
+        else:
+            flash('Invalid file type. Allowed types are png, jpg, jpeg.', 'error')
+
         page.save()
         flash('"%s" was saved.' % page.title, 'success')
         return redirect(url_for('wiki.display', url=url))
-    return render_template('editor.html', form=form, page=page)
+    return render_template('editor.html', form=form, page=page, image=page_image)
 
 
 
@@ -106,6 +163,7 @@ def save(url):
         page.save()
         return jsonify(success=True)
     return jsonify("success=False, errors=form.errors")
+
 
 @bp.route('/preview/', methods=['POST'])
 @protect
@@ -126,6 +184,25 @@ def move(url):
         current_wiki.move(url, new_url)
         return redirect(url_for('wiki.display', url=new_url))
     return render_template('move.html', form=form, page=page)
+
+
+@bp.route('/download_image/<path:url>/')
+@protect
+def download_image(url):
+    user_name = session["unique_id"]
+
+    file_extension = search_file_in_directory(img, user_name + '-' + url)
+
+
+    page_image = f"{user_name}-{url}{file_extension}"
+
+    image_path = os.path.join(img, page_image)
+
+
+    # Set the filename that the user will see when downloading
+    filename = page_image
+
+    return send_file(image_path, as_attachment=True, download_name=filename)
 
 
 @bp.route('/delete/<path:url>/')
