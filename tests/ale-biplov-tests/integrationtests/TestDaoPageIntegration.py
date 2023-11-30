@@ -22,7 +22,7 @@ class TestDaoPageIntegration(unittest.TestCase):
     def setUp(self):
         # Create a test page
         self.test_url = "test_page"
-        self.test_page = Page(self.test_db, self.test_url, new=True)
+        self.test_page = Page(self.test_db, self.test_url, new_flag=True)
 
         self.test_page.load()
         self.test_page.render()
@@ -38,7 +38,7 @@ class TestDaoPageIntegration(unittest.TestCase):
         self.test_page.save()
 
         # Load the page from the test database
-        loaded_page = Page(self.test_db, self.test_url)
+        loaded_page = Page(self.test_db, self.test_url, new_flag=False)
 
         # Check if the loaded page has the same metadata and content
         self.assertEqual(self.test_page.title, loaded_page.title)
@@ -51,8 +51,9 @@ class TestDaoPageIntegration(unittest.TestCase):
 
         self.test_page.render()
 
-        # Check if the rendered HTML is not empty
+        # Check if the rendered HTML is not empty with the updated content
         self.assertTrue(self.test_page.html)
+        self.assertEqual(self.test_page.content, "## HTML Render Test Content")
 
 
 if __name__ == '__main__':
