@@ -335,11 +335,20 @@ class Wiki(object):
     def get_all(self):
         """
         Retrieves all wiki pages from the database that belong to an author.
-        Returns:list[Page]: A list of all Page objects.
+        Returns: list[Page]: A list of all Page objects.
         """
         author_id = session.get('unique_id')
+        print(f"Author ID: {author_id}")
+
         cursor = self.collection.find({"author": author_id})
-        return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
+        pages = [Page(DataAccessObject.db, doc['url']) for doc in cursor]
+
+        # Print the list of retrieved pages for debugging
+        print("List of all pages:")
+        for page in pages:
+            print(f"Page URL: {page.url}")
+
+        return pages
 
     def get_or_404(self, url):
         """

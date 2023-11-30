@@ -24,8 +24,6 @@ class WikiTest(unittest.TestCase):
         with self.app.test_request_context():
             session['unique_id'] = 'test_unique_id'
 
-
-
     def tearDown(self):
         # This method is called after each test
         self.ctx.pop()
@@ -209,23 +207,39 @@ class WikiTest(unittest.TestCase):
             saved_page = self.mock_db.pages.find_one({"url": test_url})
             self.assertEqual(saved_page['content'], updated_content)
 
-        @patch('wiki.core.session', {'unique_id': 'test_user'})
-        def test_save_new_page(self):
-            # Test data
-            new_url = "new_page"
-            new_content = "Content for new page."
+    @patch('wiki.core.session', {'unique_id': 'test_user'})
+    def test_save_new_page(self):
+        # Test data
+        new_url = "new_page"
+        new_content = "Content for new page."
 
-            # Create new page and save
-            new_page = Page(self.mock_db, new_url, new_flag=True)
-            new_page.content = new_content
-            new_page.save()
+        # Create new page and save
+        new_page = Page(self.mock_db, new_url, new_flag=True)
+        new_page.content = new_content
+        new_page.save()
 
-            # Retrieve the saved page from the database
-            saved_page = self.mock_db.pages.find_one({"url": new_url})
+        # Retrieve the saved page from the database
+        saved_page = self.mock_db.pages.find_one({"url": new_url})
 
-            # Assertions
-            self.assertIsNotNone(saved_page)
-            self.assertEqual(saved_page['content'], new_content)
+        # Assertions
+        self.assertIsNotNone(saved_page)
+        self.assertEqual(saved_page['content'], new_content)
+
+    @patch('wiki.core.session', {'unique_id': 'test_user'})
+    def test_get_all(self):
+        # Insert some pages into the mock collection with the same author
+        self.mock_collection.insert_many([
+            {"url": "page1", "content": "Content1", "meta": {}, "author": "test_user"},
+            {"url": "page2", "content": "Content2", "meta": {}, "author": "test_user"}
+        ])
+
+        # Test the get_all method
+        pages = self.wiki.get_all()
+        # Assertions to verify the expected behavior
+        self.assertEqual(len(pages), 2)
+        self.assertTrue(any(page.url == "page1" for page in pages))
+        self.assertTrue(any(page.url == "page2" for page in pages))
+
 
 if __name__ == '__main__':
     unittest.main()
