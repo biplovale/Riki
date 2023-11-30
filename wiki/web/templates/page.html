@@ -29,6 +29,9 @@
       {% endfor %}
   </ul>
 {% endif %}
+{% if image != '' %}
+<img src= "{{ url_for('wiki.static', filename='Images/' + image) }}" alt="img">
+{% endif %}
 <h3>Actions</h3>
 <ul class="nav nav-tabs nav-stacked">
 	<li><a href="{{ url_for('wiki.edit', url=page.url) }}">Edit</a></li>

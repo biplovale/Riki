@@ -3,6 +3,7 @@
     ~~~~~
 """
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField
 from wtforms import BooleanField
 from wtforms import StringField
 from wtforms import TextAreaField
@@ -42,6 +43,7 @@ class EditorForm(FlaskForm):
     title = StringField('', [InputRequired()])
     content = TextAreaField('', [InputRequired()])
     tags = StringField('')
+    image = FileField('')
 
 
 class LoginForm(FlaskForm):
