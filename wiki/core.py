@@ -7,6 +7,7 @@ from collections import OrderedDict
 import markdown
 from flask import abort, session
 from flask import url_for
+
 from wiki import DataAccessObject
 
 
@@ -162,6 +163,7 @@ class Processor(object):
 
         return self.final, self.markdown, self.meta
 
+
 # in this class commented code is original code provided
 class Page(object):
     """
@@ -175,6 +177,7 @@ class Page(object):
         _meta (OrderedDict): Metadata associated with the wiki page.
         new (bool): Indicates whether the page is new and not yet saved in the database.
     """
+
     def __init__(self, db, url, new=False):
         """
             Initializes a new instance of the Page class.
@@ -201,7 +204,6 @@ class Page(object):
         """
         return "<Page: {}@{}>".format(self.url, self.path)
 
-
     def load(self):
         """
             Loads the page content and metadata from the MongoDB database.
@@ -224,7 +226,6 @@ class Page(object):
         """
         processor = Processor(self.content)
         self._html, self.body, self._meta = processor.process()
-
 
     def save(self, update=True):
         # Prepare data for MongoDB storage
@@ -264,6 +265,14 @@ class Page(object):
     @property
     def html(self):
         return self._html
+
+    @html.setter
+    def html(self, value):
+        """
+        Sets the html of the page.
+        Parameters:value (str): The html to set for the page.
+        """
+        self._html = value
 
     def __html__(self):
         return self.html
@@ -311,12 +320,12 @@ class Wiki(object):
         Attributes:
             collection (pymongo.collection.Collection): A MongoDB collection that stores the wiki pages.
         """
+
     def __init__(self):
         """
                 Initializes the Wiki object by setting up the MongoDB collection.
         """
         self.collection = DataAccessObject.db.pages  # Use your MongoDB collection name
-
 
     def exists(self, url):
         """
@@ -366,7 +375,6 @@ class Wiki(object):
         if not self.exists(url):
             return Page(DataAccessObject.db, url, new=True)
         return False
-
 
     def move(self, old_url, new_url):
         """

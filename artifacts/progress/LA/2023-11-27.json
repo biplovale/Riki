@@ -1,0 +1,144 @@
+{
+  "header": {
+    "cloc_url": "github.com/AlDanial/cloc",
+    "cloc_version": "1.98",
+    "elapsed_seconds": 68.247220993042,
+    "n_files": 2903,
+    "n_lines": 1204764,
+    "files_per_second": 42.5365305394042,
+    "lines_per_second": 17652.938573467,
+    "report_file": "artifacts/progress/LA/2023-11-27.json"
+  },
+  "Python": {
+    "nFiles": 2647,
+    "blank": 154816,
+    "comment": 203283,
+    "code": 791080
+  },
+  "CSS": {
+    "nFiles": 8,
+    "blank": 54,
+    "comment": 74,
+    "code": 13327
+  },
+  "JavaScript": {
+    "nFiles": 12,
+    "blank": 2710,
+    "comment": 2160,
+    "code": 9287
+  },
+  "C/C++ Header": {
+    "nFiles": 45,
+    "blank": 1022,
+    "comment": 2063,
+    "code": 4776
+  },
+  "C": {
+    "nFiles": 6,
+    "blank": 614,
+    "comment": 514,
+    "code": 4681
+  },
+  "PO File": {
+    "nFiles": 30,
+    "blank": 990,
+    "comment": 1141,
+    "code": 2978
+  },
+  "C++": {
+    "nFiles": 2,
+    "blank": 436,
+    "comment": 862,
+    "code": 2154
+  },
+  "SQL": {
+    "nFiles": 3,
+    "blank": 0,
+    "comment": 0,
+    "code": 1096
+  },
+  "HTML": {
+    "nFiles": 22,
+    "blank": 81,
+    "comment": 7,
+    "code": 876
+  },
+  "Text": {
+    "nFiles": 78,
+    "blank": 140,
+    "comment": 0,
+    "code": 728
+  },
+  "Cython": {
+    "nFiles": 6,
+    "blank": 173,
+    "comment": 16,
+    "code": 586
+  },
+  "Mako": {
+    "nFiles": 8,
+    "blank": 131,
+    "comment": 4,
+    "code": 416
+  },
+  "SVG": {
+    "nFiles": 1,
+    "blank": 0,
+    "comment": 0,
+    "code": 288
+  },
+  "reStructuredText": {
+    "nFiles": 11,
+    "blank": 75,
+    "comment": 6,
+    "code": 278
+  },
+  "Markdown": {
+    "nFiles": 5,
+    "blank": 32,
+    "comment": 0,
+    "code": 217
+  },
+  "XML": {
+    "nFiles": 7,
+    "blank": 0,
+    "comment": 1,
+    "code": 138
+  },
+  "Assembly": {
+    "nFiles": 2,
+    "blank": 30,
+    "comment": 14,
+    "code": 120
+  },
+  "JSON": {
+    "nFiles": 4,
+    "blank": 0,
+    "comment": 0,
+    "code": 72
+  },
+  "Fish Shell": {
+    "nFiles": 1,
+    "blank": 18,
+    "comment": 14,
+    "code": 68
+  },
+  "DOS Batch": {
+    "nFiles": 4,
+    "blank": 8,
+    "comment": 0,
+    "code": 49
+  },
+  "PowerShell": {
+    "nFiles": 1,
+    "blank": 10,
+    "comment": 4,
+    "code": 46
+  },
+  "SUM": {
+    "blank": 161340,
+    "comment": 210163,
+    "code": 833261,
+    "nFiles": 2903
+  }
+}

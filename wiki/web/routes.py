@@ -13,7 +13,6 @@ from flask_login import login_required
 from flask_login import login_user
 from flask_login import logout_user
 
-from wiki.core import Processor
 from wiki.web.forms import EditorForm, SignUpForm
 from wiki.web.forms import LoginForm
 from wiki.web.forms import SearchForm
@@ -34,11 +33,13 @@ def home():
         return display('home')
     return render_template('home.html')
 
+
 @bp.route('/index/')
 @protect
 def index():
     pages = current_wiki.index()
     return render_template('index.html', pages=pages)
+
 
 # function used to display profile page
 @bp.route('/profile')
@@ -49,6 +50,7 @@ def profile():
     if page:
         return display('bio', pages_sent_by_author=pages)
     return render_template('bio.html')
+
 
 @bp.route('/<path:url>/')
 @protect
@@ -63,6 +65,7 @@ def display(url, pages_sent_by_author=None):
             return render_template('bio.html', page=page_bio, pages_sent=pages_sent_by_author)
         return render_template('page_bio.html', page=page_bio, pages_sent=pages_sent_by_author)
     return render_template('page.html', page=page, pages_sent=pages_sent_by_author)
+
 
 @bp.route('/create/', methods=['GET', 'POST'])
 @protect
@@ -89,7 +92,6 @@ def edit(url):
     return render_template('editor.html', form=form, page=page)
 
 
-
 @bp.route('/save/<path:url>/', methods=['POST'])
 @protect
 def save(url):
@@ -103,6 +105,7 @@ def save(url):
         page.save()
         return jsonify(success=True)
     return jsonify("success=False, errors=form.errors")
+
 
 @bp.route('/preview/', methods=['POST'])
 @protect
@@ -173,7 +176,6 @@ def user_login():
 
 @bp.route('/signup/', methods=['GET', 'POST'])
 def signup():
-
     form = SignUpForm()
     if form.validate_on_submit():
         if form.password.data == form.confirm_password.data:
