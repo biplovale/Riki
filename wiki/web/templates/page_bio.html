@@ -5,10 +5,23 @@
 {% endblock title %}
 
 {% block content %}
-    <div class="bio-content">
-        <h2> {{ page.title }}</h2>
-        <p> {{ page.content }}</p>
+    <div id="confirmDelete" class="modal hide fade" aria-hidden="true">
+        <div class="modal-header">
+            <h3>Are you sure?</h3>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete {{ page.title }}?  This cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">No</a>
+            <a href="{{ url_for('wiki.delete', url=page.url) }}" class="btn btn-danger">Yes, delete.</a>
+        </div>
     </div>
+
+    {{ page }}
+
+    <!-- New Code Starts Here -->
+    <hr>
     <h3>Posts Created</h3> <!-- Heading above the table -->
     {% if pages_sent %}
     <table class="table">
@@ -29,14 +42,24 @@
             {% endfor %}
         </tbody>
     </table>
-{% else %}
-    <p>There are no pages yet.</p>
-{% endif %}
+    {% else %}
+        <p>There are no pages yet.</p>
+    {% endif %}
+    <hr>
+    <!-- New Code Ends Here -->
 {% endblock content %}
 
 {% block sidebar %}
-    <h3>Biography Actions</h3>
+    {% if page.tags %}
+    <h3>Tags</h3>
+    <ul>
+        {% for tag in page.tags.split(',') %}
+            <li><a href="{{ url_for('wiki.tag', name=tag.strip()) }}">{{ tag|trim }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <h3>Actions</h3>
     <ul class="nav nav-tabs nav-stacked">
-        <li><a href="{{ url_for('wiki.edit', url=page.url) }}">Edit Biography</a></li>
+        <li><a href="{{ url_for('wiki.edit', url=page.url) }}">Edit</a></li>
     </ul>
 {% endblock sidebar %}
