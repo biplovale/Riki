@@ -22,11 +22,18 @@ class TestPage(unittest.TestCase):
 
         # Initialize Page and load data
         page = Page(self.mock_db, test_url)
-        page.load()
 
-        # Assertions
+        # Test loading an existing page
+        page.load()
         self.assertEqual(page.content, test_content)
         self.assertEqual(page.url, test_url)
+
+        # Test loading a non-existing page
+        non_existing_url = "non_existing_page"
+        page_non_existing = Page(self.mock_db, non_existing_url)
+        page_non_existing.load()
+        self.assertEqual(page_non_existing.content, "")
+        self.assertEqual(page_non_existing.url, non_existing_url)
 
     def test_page_render(self):
         test_content = "# Test Header\nTest paragraph."
@@ -66,6 +73,7 @@ class TestPage(unittest.TestCase):
         # Assertions
         self.assertIsNotNone(saved_page)
         self.assertEqual(saved_page['content'], new_content)
+
 
 
 if __name__ == '__main__':
