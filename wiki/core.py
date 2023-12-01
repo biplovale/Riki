@@ -323,8 +323,7 @@ class Wiki(object):
         Returns:
             Page: The Page object corresponding to the URL and author, or None if not found.
         """
-        author_id = session.get('unique_id')
-        query = {"url": url, "author": author_id}
+        query = {"url": url}
         document = self.collection.find_one(query)
 
         if document:
@@ -398,8 +397,7 @@ class Wiki(object):
         Retrieves an index of all wiki pages.
         Returns:list[Page]: A list of all Page objects in the database.
         """
-        author_id = session.get('unique_id')
-        cursor = self.collection.find({"author": author_id})
+        cursor = self.collection.find()
         return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
 
     def get_by_title(self, title):
@@ -413,10 +411,8 @@ class Wiki(object):
         return self.collection.find_one(query)
 
     def get_tags(self):
-        author_id = session.get('unique_id')
-
         # Fetch and store documents in a list
-        documents = list(self.collection.find({"author": author_id}))
+        documents = list(self.collection.find())
 
         tags = {}
         for doc in documents:
