@@ -12,11 +12,18 @@ Wiki Editor
 </ul>
 <div class="tab-content">
 	<div class="tab-pane active" id="editor">
-		<form method="post" class="form">
+		<form method="post" class="form" enctype="multipart/form-data">
 			{{ form.hidden_tag() }}
 			{{ input(form.title, placeholder="Title", class="span7", autocomplete="off") }}
 			{{ input(form.content, placeholder="Markdown", class="span7", rows="20") }}
 			{{ input(form.tags, placeholder="Tags (comma separated)", class="span7", autocomplete="off") }}
+
+            {% if image != '' %}
+                <p><b>Upload to update the image.</b></p>
+            {% else %}
+                <p><b>Upload to add an image.</b></p>
+            {% endif %}
+            {{ input(form.image, placeholder="Upload to add/Update the image", type="file") }}
 			<div class="form-actions">
         <div class="pull-left">
           <a class="btn" href="#preview" id="previewbtn">Preview</a>
@@ -33,6 +40,9 @@ Wiki Editor
 {% endblock content %}
 
 {% block sidebar %}
+{% if image != '' %}
+    <img src= "{{ url_for('wiki.static', filename='Images/' + image) }}" alt="img">
+{% endif %}
 <h3>Editor How-To</h3>
 <p>This editor is <a href="http://daringfireball.net/projects/markdown/">markdown</a> featured.</p>
 <pre><code>* I
