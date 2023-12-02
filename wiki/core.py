@@ -187,6 +187,10 @@ class Page(object):
             self.load()
             self.render()
 
+    def __eq__(self, other):
+        return isinstance(other, Page) and self.url == other.url
+
+
     def __repr__(self):
         """
             Returns a string representation of the Page object.
