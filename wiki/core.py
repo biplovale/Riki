@@ -343,7 +343,6 @@ class Wiki(object):
         Returns: list[Page]: A list of all Page objects.
         """
         author_id = session.get('unique_id')
-        print(f"Author ID: {author_id}")
 
         cursor = self.collection.find({"author": author_id})
         pages = [Page(DataAccessObject.db, doc['url']) for doc in cursor]
