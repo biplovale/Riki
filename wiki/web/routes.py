@@ -38,11 +38,11 @@ def allowed_file(filename):
 @bp.route('/')
 @protect
 def home():
-    # return render_template('home.html')
+    user_name = session["unique_id"]
     if User.is_authenticated:
-        page = current_wiki.get('home')
+        page = current_wiki.get(user_name + '-' + 'home')
         if page:
-            return display('home')
+            return display(user_name + '-' + 'home')
         return render_template('home.html')
     return redirect(url_for('user_login'))
 
@@ -58,10 +58,11 @@ def index():
 @bp.route('/profile')
 @protect
 def profile():
+    user_name = session["unique_id"]
     all_pages = current_wiki.get_all()
-    bio_page = current_wiki.get('bio')
+    bio_page = current_wiki.get(user_name + '-' +'bio')
     if bio_page:
-        return display('bio', pages_sent_by_author=all_pages)
+        return display(user_name + '-' + 'bio', pages_sent_by_author=all_pages)
     return render_template('bio.html')
 
 
@@ -71,10 +72,10 @@ def display(url, pages_sent_by_author=None):
     page = current_wiki.get_or_404(url)
 
     user_name = session["unique_id"]
-    file_extension = search_file_in_directory(img, user_name + '-' + url)
+    file_extension = search_file_in_directory(img, url)
 
     if file_extension:
-        page_image = f"{user_name}-{url}{file_extension}"
+        page_image = f"{url}{file_extension}"
     else:
         page_image = ''
 
@@ -134,7 +135,7 @@ def edit(url):
 
             original_file_name = secure_filename(file.filename)
             file_extension = original_file_name.split('.', 1)[-1]
-            new_file_name = f"{user_name}-{url}.{file_extension}"
+            new_file_name = f"{url}.{file_extension}"
 
             file.save(os.path.join(img, new_file_name))
             flash('Image uploaded successfully!', 'success')
@@ -182,6 +183,13 @@ def move(url):
     if form.validate_on_submit():
         new_url = form.url.data
         current_wiki.move(url, new_url)
+
+        file_extension = search_file_in_directory(img, url)
+        old_image_path = os.path.join(img,f"{url}{file_extension}")
+        new_image_path = os.path.join(img,f"{new_url}{file_extension}")
+
+        os.rename(old_image_path, new_image_path)
+
         return redirect(url_for('wiki.display', url=new_url))
     return render_template('move.html', form=form, page=page)
 
@@ -191,10 +199,10 @@ def move(url):
 def download_image(url):
     user_name = session["unique_id"]
 
-    file_extension = search_file_in_directory(img, user_name + '-' + url)
+    file_extension = search_file_in_directory(img, url)
 
 
-    page_image = f"{user_name}-{url}{file_extension}"
+    page_image = f"{url}{file_extension}"
 
     image_path = os.path.join(img, page_image)
 

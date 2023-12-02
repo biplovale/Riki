@@ -428,8 +428,7 @@ class Wiki(object):
         """
         Retrieves a list of pages that have a specific tag.
         """
-        author_id = session.get('unique_id')
-        query = {"tags": {"$regex": tag, "$options": "i"}, "author": author_id}
+        query = {"tags": {"$regex": tag, "$options": "i"}}
         cursor = self.collection.find(query)
         pages = [Page(DataAccessObject.db, doc['url']) for doc in cursor]
         return pages
