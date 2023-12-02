@@ -185,10 +185,12 @@ def move(url):
         current_wiki.move(url, new_url)
 
         file_extension = search_file_in_directory(img, url)
-        old_image_path = os.path.join(img,f"{url}{file_extension}")
-        new_image_path = os.path.join(img,f"{new_url}{file_extension}")
 
-        os.rename(old_image_path, new_image_path)
+        if file_extension:
+            old_image_path = os.path.join(img,f"{url}{file_extension}")
+            new_image_path = os.path.join(img,f"{new_url}{file_extension}")
+
+            os.rename(old_image_path, new_image_path)
 
         return redirect(url_for('wiki.display', url=new_url))
     return render_template('move.html', form=form, page=page)
