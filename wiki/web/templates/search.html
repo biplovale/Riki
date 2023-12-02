@@ -25,7 +25,9 @@
 	{% if results %}
 		<ul>
 			{% for result in results %}
-				<li><a href="{{ url_for('wiki.display', url=result.url) }}">{{ result.title }}</a></li>
+				{% if result.url not in ['home', 'bio'] %}
+					<li><a href="{{ url_for('wiki.display', url=result.url) }}">{{ result.title }}</a></li>
+				{% endif %}
 			{% endfor %}
 		</ul>
 	{% else %}

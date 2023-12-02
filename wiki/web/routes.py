@@ -260,6 +260,7 @@ def user_login():
         session["unique_id"] = form.name.data
         login_user(user)
         user.set('authenticated', True)
+        session['is_authenticated'] = True
         flash(f'Login successful, {form.name.data}!', 'success')
         return redirect(request.args.get("next") or url_for('wiki.index'))
     return render_template('login.html', form=form)
@@ -286,6 +287,7 @@ def signup():
 @login_required
 def user_logout():
     current_user.set('authenticated', False)
+    session['is_authenticated'] = False
     logout_user()
     flash('Logout successful.', 'success')
     return redirect(url_for('wiki.index'))
