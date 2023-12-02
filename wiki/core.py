@@ -434,11 +434,23 @@ class Wiki(object):
         matched = []
         for attr in attrs:
             query = {"$regex": regex.pattern, "$options": "i"} if ignore_case else regex.pattern
-            cursor = self.collection.find({f"meta.{attr}": query})
-            for doc in cursor:
-                page = Page(DataAccessObject.db, doc['url'])
-                if page not in matched:
-                    matched.append(page)
+
+            if attr == 'tags':
+                cursor = self.collection.find()
+
+                for doc in cursor:
+                    tags_list = doc.get("tags", "").split(', ')
+                    if any(regex.search(tag) for tag in tags_list):
+                        page = Page(DataAccessObject.db, doc['url'])
+                        if page not in matched:
+                            matched.append(page)
+            else:
+                cursor = self.collection.find({f"meta.{attr}": query})
+
+                for doc in cursor:
+                    page = Page(DataAccessObject.db, doc['url'])
+                    if page not in matched:
+                        matched.append(page)
         return matched
 
     def search_by_author(self, author_name):
