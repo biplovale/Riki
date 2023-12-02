@@ -165,7 +165,7 @@ class Page(object):
         new (bool): Indicates whether the page is new and not yet saved in the database.
     """
 
-    def __init__(self, db, url, new_flag=False, author=None):
+    def __init__(self, db, url, new_flag=False):
         """
             Initializes a new instance of the Page class.
            Parameters:
@@ -181,7 +181,7 @@ class Page(object):
         self.content = ""
         self._html = ""
         self._tags = ""
-        self.author = author if author is not None else session.get('unique_id', '')
+        self.author = session.get('unique_id', '') or ""
 
         if not self.new:
             self.load()
