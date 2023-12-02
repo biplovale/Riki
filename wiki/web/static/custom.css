@@ -36,3 +36,25 @@ select {
 span:has(.VIpgJd-ZVi9od-l4eHX-hSRGPd) {
   display: none !important;
 }
+.vertical-form {
+    display: flex;
+    flex-direction: column;
+}
+.small-btn {
+    font-size: 12px;
+    padding: 2px 5px;
+    width: 80px !important;/* Adjust padding as needed */
+}
+.brand{
+    width: 50px !important;
+    height: 30px !important;
+}
+.brand img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.span12 {
+    display: flex;
+    align-items: center;
+}
