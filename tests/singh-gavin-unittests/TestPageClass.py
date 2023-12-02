@@ -1,19 +1,31 @@
 import unittest
 from unittest.mock import patch
-
 import mongomock
+from flask import Flask, session
 
-from wiki import DataAccessObject
-from wiki.core import Page
-
+from wiki.core import Page, DataAccessObject
 
 class TestPage(unittest.TestCase):
     def setUp(self):
-        self.mock_db = mongomock.MongoClient().database
+        # Create a mock MongoDB database
+        self.mock_db = mongomock.MongoClient().db
         DataAccessObject.db = self.mock_db
 
+        # Create Flask app and test request context
+        self.app = Flask(__name__)
+        self.app.secret_key = 'your_secret_key_here'
+        self.ctx = self.app.test_request_context()
+        self.ctx.push()
+
+        # Set a test session user
+        with self.app.test_request_context():
+            session['unique_id'] = 'test_user'
+
+    def tearDown(self):
+        # Pop the Flask test request context
+        self.ctx.pop()
+
     def test_page_load(self):
-        # Data for testing
         test_url = "test_page"
         test_content = "This is a test page."
 
@@ -58,7 +70,6 @@ class TestPage(unittest.TestCase):
 
     @patch('wiki.core.session', {'unique_id': 'test_user'})
     def test_save_new_page(self):
-        # Test data
         new_url = "new_page"
         new_content = "Content for new page."
 
@@ -73,8 +84,6 @@ class TestPage(unittest.TestCase):
         # Assertions
         self.assertIsNotNone(saved_page)
         self.assertEqual(saved_page['content'], new_content)
-
-
 
 if __name__ == '__main__':
     unittest.main()

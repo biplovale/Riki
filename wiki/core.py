@@ -165,7 +165,7 @@ class Page(object):
         new (bool): Indicates whether the page is new and not yet saved in the database.
     """
 
-    def __init__(self, db, url, new_flag=False):
+    def __init__(self, db, url, new_flag=False, author=None):
         """
             Initializes a new instance of the Page class.
            Parameters:
@@ -181,6 +181,8 @@ class Page(object):
         self.content = ""
         self._html = ""
         self._tags = ""
+        self.author = author if author is not None else session.get('unique_id', '')
+
         if not self.new:
             self.load()
             self.render()
@@ -227,7 +229,7 @@ class Page(object):
             "content": self.content,
             "meta": dict(self._meta),
             "tags": self._tags,  # Save tags
-            "author": session.get('unique_id') or "",
+            "author": self.author,
             "updated_at": current_time
         }
         if self.new:
@@ -342,12 +344,6 @@ class Wiki(object):
 
         cursor = self.collection.find({"author": author_id})
         pages = [Page(DataAccessObject.db, doc['url']) for doc in cursor]
-
-        # Print the list of retrieved pages for debugging
-        print("List of all pages:")
-        for page in pages:
-            print(f"Page URL: {page.url}")
-
         return pages
 
     def get_or_404(self, url):
@@ -398,8 +394,7 @@ class Wiki(object):
         Retrieves an index of all wiki pages.
         Returns:list[Page]: A list of all Page objects in the database.
         """
-        author_id = session.get('unique_id')
-        cursor = self.collection.find({"author": author_id})
+        cursor = self.collection.find()
         return [Page(DataAccessObject.db, doc['url']) for doc in cursor]
 
     def get_by_title(self, title):
