@@ -1,10 +1,12 @@
 {% from "helpers.html" import input %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 	<head>
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='bootstrap.css') }}">
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='responsive.css') }}">
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='pygments.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='custom.css') }}">
+        <script src="https://kit.fontawesome.com/b6798fcdf3.js" crossorigin="anonymous"></script>
 	</head>
 
 	<body>
@@ -13,7 +15,7 @@
 				<div class="container">
 					<div class="row">
 						<div class="span12">
-							<a href="#" class="brand">{{ config.TITLE }}</a>
+							<a href="#" class="brand"><img src= "{{ url_for('wiki.static', filename='Images/' + 'RikiLogo.png') }}" alt="img"></a>
 							<ul class="nav">
 								<li><a href="{{ url_for('wiki.home') }}">Home</a></li>
 								<li><a href="{{ url_for('wiki.index') }}">Index</a></li>
@@ -22,17 +24,18 @@
                                 <li><a href="{{ url_for('wiki.profile') }}">Profile</a></li>
 								<li class="divider-vertical"></li>
 								<li><a href="{{ url_for('wiki.create') }}">New Page</a></li>
+								<li><div id="google_translate_element"></div></li>
 								<li class="divider-vertical"></li>
 								<li></li>
 							</ul>
 
 							<ul class="nav pull-right">
-								{% if current_user.is_anonymous %}
-									<li><a href="{{ url_for('wiki.user_login') }}">Login</a></li>
-								{% else %}
-									<li><a href="{{ url_for('wiki.user_logout') }}">Logout</a></li>
-								{% endif %}
-							</ul>
+                            {% if not session['is_authenticated'] %}
+                                <li><a href="{{ url_for('wiki.user_login') }}">Login</a></li>
+                            {% else %}
+                                <li><a href="{{ url_for('wiki.user_logout') }}">Logout</a></li>
+                            {% endif %}
+                             </ul>
 						</div>
 					</div>
 				</div>
@@ -80,6 +83,16 @@
 				</div>
 			</div>
 		</div>
+
+        <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+        <script>
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement(
+            {pageLanguage: 'en'},
+            'google_translate_element'
+            );
+        }
+        </script>
 		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.0/jquery.min.js "></script>
 		<script type="text/javascript">
 			if (typeof jQuery == 'undefined') {

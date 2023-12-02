@@ -2,6 +2,7 @@
 venv
 .idea/*
 config.py
+htmlcov
 __pycache__/
 wiki/__pycache__/
 wiki/web/__pycache__/

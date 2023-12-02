@@ -5,7 +5,7 @@
 
 {% block content %}
 <p>Your professional biography is currently missing. We highly recommend completing it to enhance your profile.</p>
-<p><a href="{{ url_for('wiki.edit', url='bio') }}" class="btn btn-success">Compose Your Biography</a></p>
+<p><a href="{{ url_for('wiki.edit', url=session.get('unique_id') + '-bio') }}" class="btn btn-success">Compose Your Biography</a></p>
 
     {% if pages_sent %}
     <h3>Posts Created</h3> <!-- Add this line for the heading above the table -->
@@ -26,6 +26,5 @@
         </tbody>
     </table>
 {% else %}
-    <p>There are no pages yet.</p>
 {% endif %}
 {% endblock %}
