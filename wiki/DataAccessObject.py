@@ -2,6 +2,8 @@ import certifi
 from pymongo import MongoClient
 
 from config import *
+
+
 class DatabaseSingleton:
     _instance = None
 

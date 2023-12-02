@@ -181,6 +181,8 @@ class Page(object):
         self.content = ""
         self._html = ""
         self._tags = ""
+        self.author = session.get('unique_id', '') or ""
+
         if not self.new:
             self.load()
             self.render()
@@ -227,7 +229,7 @@ class Page(object):
             "content": self.content,
             "meta": dict(self._meta),
             "tags": self._tags,  # Save tags
-            "author": session.get('unique_id') or "",
+            "author": self.author,
             "updated_at": current_time
         }
         if self.new:
@@ -341,12 +343,6 @@ class Wiki(object):
 
         cursor = self.collection.find({"author": author_id})
         pages = [Page(DataAccessObject.db, doc['url']) for doc in cursor]
-
-        # Print the list of retrieved pages for debugging
-        print("List of all pages:")
-        for page in pages:
-            print(f"Page URL: {page.url}")
-
         return pages
 
     def get_or_404(self, url):
