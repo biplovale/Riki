@@ -71,9 +71,8 @@ Turns into:
 
 $(document).ready(function() {
     var inputElement = $('input[type="text"], textarea');
-    var isCreatePage = inputElement.filter(function() {
-      return $(this).val().trim() !== '';
-    }).length === 0;
+    var textareaValue = inputElement.filter('textarea').val();
+    var isCreatePage = textareaValue.trim() === '';
 
     console.log(isCreatePage);
 

@@ -83,6 +83,7 @@ def display(url, pages_sent_by_author=None):
         return render_template('page.html', page=page, image=page_image)
     elif url == user_name + '-bio':
         page_bio = current_wiki.get_or_404(url)
+        pages_sent_by_author = current_wiki.get_all()
         return render_template('page_bio.html', page=page_bio, pages_sent=pages_sent_by_author, image=page_image)
     return render_template('page.html', page=page, image=page_image)
 
