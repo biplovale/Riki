@@ -146,6 +146,7 @@ class Processor(object):
         """
         self.process_pre()
         self.process_markdown()
+        self.split_raw()
         self.process_meta()
         self.process_post()
 
@@ -240,6 +241,7 @@ class Page(object):
             page_data["created_at"] = current_time
 
         self.collection.update_one({"url": self.url}, {"$set": page_data}, upsert=True)
+
         if update:
             self.load()
             self.render()
@@ -333,7 +335,7 @@ class Wiki(object):
         document = self.collection.find_one(query)
 
         if document:
-            return Page(DataAccessObject.db, url)
+            return Page(DataAccessObject.db, url, new_flag=False)
         return None
 
     # to get all the pages by author
@@ -432,7 +434,7 @@ class Wiki(object):
         pages = [Page(DataAccessObject.db, doc['url']) for doc in cursor]
         return pages
 
-    def search(self, term, ignore_case=True, attrs=['title', 'tags', 'body']):
+    def search(self, term, ignore_case=True, attrs=['title', 'tags', 'content']):
         regex = re.compile(term, re.IGNORECASE if ignore_case else 0)
         matched = []
         for attr in attrs:
@@ -447,6 +449,13 @@ class Wiki(object):
                         page = Page(DataAccessObject.db, doc['url'])
                         if page not in matched:
                             matched.append(page)
+            elif attr == 'content':
+                cursor = self.collection.find({f"{attr}": query})
+
+                for doc in cursor:
+                    page = Page(DataAccessObject.db, doc['url'])
+                    if page not in matched:
+                        matched.append(page)
             else:
                 cursor = self.collection.find({f"meta.{attr}": query})
 

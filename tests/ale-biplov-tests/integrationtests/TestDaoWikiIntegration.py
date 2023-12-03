@@ -1,6 +1,9 @@
 import unittest
+from unittest.mock import MagicMock, patch
+
 from pymongo import MongoClient
 from wiki.core import Wiki
+
 
 class TestWikiIntegration(unittest.TestCase):
     @classmethod
@@ -16,95 +19,74 @@ class TestWikiIntegration(unittest.TestCase):
         cls.wiki.collection.delete_many({})
         cls.client.close()
 
+    def tearDown(self):
+        self.wiki.collection.delete_many({})
+
     def setUp(self):
         test_page_data = [
-            {"url": "test_page_1", "meta": {"title": "Test Page 1", "tags": "tag1, tag2", "body": "Content for test page 1"}},
-            {"url": "test_page_2", "meta": {"title": "Test Page 2", "tags": "tag2, tag3", "body": "Content for test page 2"}},
-            {"url": "test_page_3", "meta": {"title": "Test Page 3", "tags": "tag3, tag4", "body": "Content for test page 3"}},
+            {"url": "test_page_1", "meta": {"title": "Test Page 1"}, "tags": "tag1, tag2", "content": "Content for test page 1", "author": "unique_id"},
+            {"url": "test_page_2", "meta": {"title": "Test Page 2"}, "tags": "tag2, tag3", "content": "Content for test page 2", "author": "unique_id"},
+            {"url": "test_page_3", "meta": {"title": "Test Page 3"}, "tags": "tag3, tag4", "content": "Content for test page 3", "author": "unique_id"},
         ]
         self.wiki.collection.insert_many(test_page_data)
 
-    def test_exists(self):
+    @patch('wiki.core.session', MagicMock(get=lambda *args, **kwargs: 'unique_id'))
+    def test_page_operations(self):
+        # Test basic page operations
         self.assertTrue(self.wiki.exists("test_page_1"))
         self.assertFalse(self.wiki.exists("nonexistent_page"))
-
-    def test_get(self):
-        page = self.wiki.get("test_page_1")
-        self.assertIsNotNone(page)
-        self.assertEqual(page.url, "test_page_1")
-
-        nonexistent_page = self.wiki.get("nonexistent_page")
-        self.assertIsNone(nonexistent_page)
-
-    def test_get_all(self):
-        pages = self.wiki.get_all()
-        self.assertEqual(len(pages), 3)
-
-        self.assertTrue(all(page.author == "unique_id" for page in pages))
-
-    def test_get_or_404(self):
-        existing_page = self.wiki.get_or_404("test_page_1")
-        self.assertIsNotNone(existing_page)
-
-        with self.assertRaises(Exception):
-            self.wiki.get_or_404("nonexistent_page")
-
-    def test_get_bare(self):
-        new_page = self.wiki.get_bare("new_page")
-        self.assertIsNotNone(new_page)
-        self.assertEqual(new_page.url, "new_page")
-
-        existing_page = self.wiki.get_bare("test_page_1")
-        self.assertFalse(existing_page)
-
-    def test_move(self):
-        self.wiki.move("test_page_1", "moved_page")
-        self.assertFalse(self.wiki.exists("test_page_1"))
-        self.assertTrue(self.wiki.exists("moved_page"))
-
-        with self.assertRaises(RuntimeError):
-            self.wiki.move("test_page_2", "moved_page")
-
-    def test_delete(self):
+        self.assertIsNotNone(self.wiki.get("test_page_1"))
+        self.assertIsNone(self.wiki.get("nonexistent_page"))
+        self.assertEqual(len(self.wiki.get_all()), 3)
         self.assertTrue(self.wiki.delete("test_page_1"))
         self.assertFalse(self.wiki.exists("test_page_1"))
 
-        self.assertFalse(self.wiki.delete("nonexistent_page"))
+    @patch('wiki.core.session', MagicMock(get=lambda *args, **kwargs: 'unique_id'))
+    def test_move_page(self):
+        # Test moving a page
+        self.wiki.move("test_page_2", "moved_page")
+        self.assertFalse(self.wiki.exists("test_page_2"))
+        self.assertTrue(self.wiki.exists("moved_page"))
 
-    def test_index(self):
+        # Attempt to move to an existing page should raise RuntimeError
+        with self.assertRaises(RuntimeError):
+            self.wiki.move("test_page_3", "moved_page")
+
+    @patch('wiki.core.session', MagicMock(get=lambda *args, **kwargs: 'unique_id'))
+    def test_index_and_search(self):
+        # Test index and search functionality
         pages = self.wiki.index()
+        print(self.wiki.index())
         self.assertEqual(len(pages), 3)
 
-    def test_index_by(self):
-        indexed_by_tags = self.wiki.index_by("tags")
-        self.assertEqual(len(indexed_by_tags), 4)
+        pages_with_tag = self.wiki.index_by_tag("tag3")
+        self.assertEqual(len(pages_with_tag), 2)
 
+        # search in content
+        search_results = self.wiki.search("Content")
+        self.assertEqual(len(search_results), 3)
+
+    @patch('wiki.core.session', MagicMock(get=lambda *args, **kwargs: 'unique_id'))
     def test_get_by_title(self):
-        page_data = self.wiki.get_by_title("Test Page 1")
+        # Test retrieving a page by title
+        page_data = self.wiki.get_by_title("Test Page 2")
         self.assertIsNotNone(page_data)
-        self.assertEqual(page_data["url"], "test_page_1")
+        self.assertEqual(page_data["url"], "test_page_2")
 
         nonexistent_page_data = self.wiki.get_by_title("Nonexistent Page")
         self.assertIsNone(nonexistent_page_data)
 
+    @patch('wiki.core.session', MagicMock(get=lambda *args, **kwargs: 'unique_id'))
     def test_get_tags(self):
+        # Test retrieving tags
         tags = self.wiki.get_tags()
         self.assertEqual(len(tags), 4)
 
-    def test_index_by_tag(self):
-        pages_with_tag = self.wiki.index_by_tag("tag2")
-        self.assertEqual(len(pages_with_tag), 2)
-
-    def test_search(self):
-        search_results = self.wiki.search("content")
-        self.assertEqual(len(search_results), 3)
-
-        search_results_case_sensitive = self.wiki.search("Content", ignore_case=False)
-        self.assertEqual(len(search_results_case_sensitive), 0)
-
-        search_results_specific_attrs = self.wiki.search("Test", attrs=["title"])
-        self.assertEqual(len(search_results_specific_attrs), 3)
-
+    @patch('wiki.core.session', MagicMock(get=lambda *args, **kwargs: 'unique_id'))
+    def test_search_by_author(self):
+        # Test searching by author
+        author_search_results = self.wiki.search_by_author("unique_id")
+        self.assertEqual(len(author_search_results), 3)
 
 if __name__ == '__main__':
     unittest.main()

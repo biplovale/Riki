@@ -19,6 +19,7 @@ class TestDaoPageIntegration(unittest.TestCase):
         cls.test_db.pages.delete_many({})
         cls.client.close()
 
+    @patch('wiki.core.session', MagicMock(get=lambda *args, **kwargs: 'mock_author'))
     def setUp(self):
         # Create a test page
         self.test_url = "test_page"
@@ -27,7 +28,7 @@ class TestDaoPageIntegration(unittest.TestCase):
         self.test_page.load()
         self.test_page.render()
 
-    @patch('wiki.core.session', MagicMock(get=lambda x: 'mock_author'))
+    @patch('wiki.core.session', MagicMock(get=lambda *args, **kwargs: 'mock_author'))
     def test_save_and_load_page(self):
         # Set some page metadata and content
         self.test_page.title = "Test Title"
