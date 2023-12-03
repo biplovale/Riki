@@ -1,0 +1,44 @@
+{"header" : {
+  "cloc_url"           : "github.com/AlDanial/cloc",
+  "cloc_version"       : "1.98",
+  "elapsed_seconds"    : 0.202080011367798,
+  "n_files"            : 37,
+  "n_lines"            : 8141,
+  "files_per_second"   : 183.095793342261,
+  "lines_per_second"   : 40286.0230702525,
+  "report_file"        : "artifacts/progress//Singh-G-.json"},
+"CSS" :{
+  "nFiles": 4,
+  "blank": 30,
+  "comment": 49,
+  "code": 5908},
+"Python" :{
+  "nFiles": 12,
+  "blank": 278,
+  "comment": 263,
+  "code": 889},
+"HTML" :{
+  "nFiles": 16,
+  "blank": 55,
+  "comment": 2,
+  "code": 582},
+"Text" :{
+  "nFiles": 2,
+  "blank": 2,
+  "comment": 0,
+  "code": 65},
+"XML" :{
+  "nFiles": 1,
+  "blank": 0,
+  "comment": 0,
+  "code": 7},
+"JavaScript" :{
+  "nFiles": 2,
+  "blank": 0,
+  "comment": 7,
+  "code": 4},
+"SUM": {
+  "blank": 365,
+  "comment": 321,
+  "code": 7455,
+  "nFiles": 37} }

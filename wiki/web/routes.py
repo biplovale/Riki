@@ -81,7 +81,7 @@ def display(url, pages_sent_by_author=None):
 
     if url == 'home':
         return render_template('page.html', page=page, image=page_image)
-    elif url == 'bio':
+    elif url == user_name + '-bio':
         page_bio = current_wiki.get_or_404(url)
         return render_template('page_bio.html', page=page_bio, pages_sent=pages_sent_by_author, image=page_image)
     return render_template('page.html', page=page, image=page_image)
@@ -111,12 +111,11 @@ def search_file_in_directory(directory, filename):
 @protect
 def edit(url):
     page = current_wiki.get(url)
-    user_name = session["unique_id"]
 
-    file_extension = search_file_in_directory(img, user_name + '-' + url)
+    file_extension = search_file_in_directory(img, url)
 
     if file_extension:
-        page_image = f"{user_name}-{url}{file_extension}"
+        page_image = f"{url}{file_extension}"
     else:
         page_image = ''
 

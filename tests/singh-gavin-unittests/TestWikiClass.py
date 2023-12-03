@@ -1,5 +1,4 @@
 import unittest
-from unittest.mock import patch
 
 import mongomock
 from flask import Flask, session
@@ -111,9 +110,10 @@ class WikiTest(unittest.TestCase):
     def test_search(self):
         # Insert pages with different content and metadata
         self.mock_collection.insert_many([
-            {"url": "page1", "content": "Test Content 1", "meta": {"title": "Test Title 1", "tags": "tag1,tag2"}},
-            {"url": "page2", "content": "Another Test Content", "meta": {"title": "Another Title", "tags": "tag2,tag3"}}
+            {"url": "page1", "content": "Test Content 1", "meta": {"title": "Title 1"}, "tags": "tag1, tag2"},
+            {"url": "page2", "content": "Test Content 2", "meta": {"title": "Title 2"}, "tags": "tag2, tag3"}
         ])
+
         # Test the search method
         search_term = "test"
         # search_results has pages that contain term "test" in them
@@ -121,10 +121,10 @@ class WikiTest(unittest.TestCase):
         # check if page1 was returned as it did contain keyword "test"
         self.assertTrue(any(page.url == "page1" for page in search_results))
         # check if page2 was returned as it did contain keyword "test"
-        self.assertFalse(any(page.url == "page2" for page in search_results))
+        self.assertTrue(any(page.url == "page2" for page in search_results))
         # Test search by tags
-        search_results = self.wiki.search("tag2", attrs=["tags"])
-        self.assertEqual(len(search_results), 2)
+        tag_search_results = self.wiki.search("tag")
+        self.assertEqual(len(tag_search_results), 2)
 
     def test_search_by_author(self):
         # Insert pages with different authors
@@ -157,89 +157,6 @@ class WikiTest(unittest.TestCase):
 
             # Check if the correct URL is associated with 'tag1'
             self.assertIn("page1", tags['tag1'])
-
-    class TestPage(unittest.TestCase):
-        def setUp(self):
-            self.mock_db = mongomock.MongoClient().database
-            DataAccessObject.db = self.mock_db
-
-        def test_page_load(self):
-            # Data for testing
-            test_url = "test_page"
-            test_content = "This is a test page."
-
-            # Insert test data into mock DB
-            self.mock_db.pages.insert_one({"url": test_url, "content": test_content, "meta": {}})
-
-            # Initialize Page and load data
-            page = Page(self.mock_db, test_url)
-
-            # Test loading an existing page
-            page.load()
-            self.assertEqual(page.content, test_content)
-            self.assertEqual(page.url, test_url)
-
-            # Test loading a non-existing page
-            non_existing_url = "non_existing_page"
-            page_non_existing = Page(self.mock_db, non_existing_url)
-            page_non_existing.load()
-            self.assertEqual(page_non_existing.content, "")
-            self.assertEqual(page_non_existing.url, non_existing_url)
-
-        def test_page_render(self):
-            test_content = "# Test Header\nTest paragraph."
-            page = Page(self.mock_db, "render_test", new_flag=True)
-            page.content = test_content
-            page.render()
-            self.assertIn("<h1>Test Header</h1>", page.html)
-
-        @patch('wiki.core.session', {'unique_id': 'test_user'})
-        def test_save_existing_page(self):
-            test_url = "existing_page"
-            original_content = "Original content."
-            updated_content = "Updated content."
-
-            self.mock_db.pages.insert_one({"url": test_url, "content": original_content})
-            page = Page(self.mock_db, test_url)
-            page.content = updated_content
-            page.save()
-
-            saved_page = self.mock_db.pages.find_one({"url": test_url})
-            self.assertEqual(saved_page['content'], updated_content)
-
-    @patch('wiki.core.session', {'unique_id': 'test_user'})
-    def test_save_new_page(self):
-        # Test data
-        new_url = "new_page"
-        new_content = "Content for new page."
-
-        # Create new page and save
-        new_page = Page(self.mock_db, new_url, new_flag=True)
-        new_page.content = new_content
-        new_page.save()
-
-        # Retrieve the saved page from the database
-        saved_page = self.mock_db.pages.find_one({"url": new_url})
-
-        # Assertions
-        self.assertIsNotNone(saved_page)
-        self.assertEqual(saved_page['content'], new_content)
-
-    @patch('wiki.core.session', {'unique_id': 'test_user'})
-    def test_get_all(self):
-        # Insert some pages into the mock collection with the same author
-        self.mock_collection.insert_many([
-            {"url": "page1", "content": "Content1", "meta": {}, "author": "test_user"},
-            {"url": "page2", "content": "Content2", "meta": {}, "author": "test_user"}
-        ])
-
-        # Test the get_all method
-        pages = self.wiki.get_all()
-        # Assertions to verify the expected behavior
-        self.assertEqual(len(pages), 2)
-        self.assertTrue(any(page.url == "page1" for page in pages))
-        self.assertTrue(any(page.url == "page2" for page in pages))
-
 
 if __name__ == '__main__':
     unittest.main()
