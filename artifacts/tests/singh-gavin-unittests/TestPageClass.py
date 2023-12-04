@@ -85,5 +85,37 @@ class TestPage(unittest.TestCase):
         self.assertIsNotNone(saved_page)
         self.assertEqual(saved_page['content'], new_content)
 
+    def test_tags_property(self):
+        page = Page(self.mock_db, "test_page")
+        page.tags = "tag1, tag2"
+        self.assertEqual(page.tags, "tag1, tag2")
+
+    def test_meta_property(self):
+        page = Page(self.mock_db, "test_page")
+        page['description'] = "Test Description"
+        self.assertEqual(page.meta['description'], "Test Description")
+
+    def test_title_property(self):
+        page = Page(self.mock_db, "test_page")
+        page.title = "Test Title"
+        self.assertEqual(page.title, "Test Title")
+
+    def test_getitem_setitem(self):
+        page = Page(self.mock_db, "test_page")
+        page['author'] = 'Test Author'
+        self.assertEqual(page['author'], 'Test Author')
+
+    def test_html_method(self):
+        page = Page(self.mock_db, "test_page")
+        page.content = "# Test Header\nTest content."
+        page.render()
+        self.assertIn("<h1>Test Header</h1>", page.__html__())
+
+    def test_render_empty_content(self):
+        page = Page(self.mock_db, "empty_content_page", new_flag=True)
+        page.content = ""
+        page.render()
+        self.assertEqual(page._html, "")
+
 if __name__ == '__main__':
     unittest.main()
